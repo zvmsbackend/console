@@ -10,6 +10,8 @@ pub fn clear_line() -> Unit
 
 pub fn clear_to_end_of_line() -> Unit
 
+pub fn error_write(String) -> Int
+
 pub fn error_write_line(String) -> Int
 
 pub fn get_window_size() -> (Int, Int)
@@ -32,7 +34,11 @@ pub fn move_cursor_right(Int) -> Unit
 
 pub fn move_cursor_up(Int) -> Unit
 
-pub fn read_key(Bool) -> ConsoleKeyInfo
+pub fn read() -> Int
+
+pub fn read_key(intercept? : Bool) -> ConsoleKeyInfo
+
+pub fn read_line() -> String
 
 pub fn reset_color() -> Unit
 
@@ -70,6 +76,8 @@ pub enum ConsoleColor {
   White
 }
 pub fn ConsoleColor::to_int(Self) -> Int
+pub impl Eq for ConsoleColor
+pub impl Show for ConsoleColor
 
 pub(all) enum ConsoleKey {
   Backspace
@@ -168,14 +176,18 @@ pub(all) enum ConsoleKey {
   F23
   F24
 }
+pub fn ConsoleKey::to_int(Self) -> Int
+pub impl Eq for ConsoleKey
+pub impl Show for ConsoleKey
 
-pub(all) struct ConsoleKeyInfo {
+pub struct ConsoleKeyInfo {
   key_char : Char
   key : ConsoleKey
   shift : Bool
   alt : Bool
   control : Bool
 }
+pub fn ConsoleKeyInfo::new(Char, ConsoleKey, Bool, Bool, Bool) -> Self
 
 pub(all) enum ConsoleSpecialKey {
   ControlC

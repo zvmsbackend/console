@@ -1,7 +1,9 @@
 {
   "name": "sennenki/console",
   "version": "0.1.0",
-  "preferred-target": "native",
+  "deps": {
+    "moonbitlang/async": "0.16.8"
+  },
   "readme": "README.mbt.md",
   "repository": "",
   "license": "Apache-2.0",
@@ -9,5 +11,6 @@
   "description": "Cross-platform console I/O library",
   "import": [
     "moonbitlang/core/encoding/utf8"
-  ]
+  ],
+  "preferred-target": "native"
 }

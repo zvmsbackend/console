@@ -1,3 +1,52 @@
-// Whitebox tests run within the package scope.
-// Use them to validate internal helpers or invariants.
-// Keep them focused; public behavior belongs in `_test.mbt`.
+///|
+test "consolekey from ascii letters" {
+  assert_eq(ConsoleKey::from_ascii(65), A)
+  assert_eq(ConsoleKey::from_ascii(90), Z)
+  assert_eq(ConsoleKey::from_ascii(97 - 32), A)
+}
+
+///|
+test "consolekey from ascii digits and specials" {
+  assert_eq(ConsoleKey::from_ascii(48), D0)
+  assert_eq(ConsoleKey::from_ascii(57), D9)
+  assert_eq(ConsoleKey::from_ascii(9), Tab)
+  assert_eq(ConsoleKey::from_ascii(13), Enter)
+  assert_eq(ConsoleKey::from_ascii(27), Escape)
+}
+
+///|
+test "consolekey from csi tilde number" {
+  assert_eq(ConsoleKey::from_csi_tilde_number(1), Home)
+  assert_eq(ConsoleKey::from_csi_tilde_number(2), Insert)
+  assert_eq(ConsoleKey::from_csi_tilde_number(3), Delete)
+  assert_eq(ConsoleKey::from_csi_tilde_number(4), End)
+  assert_eq(ConsoleKey::from_csi_tilde_number(5), PageUp)
+  assert_eq(ConsoleKey::from_csi_tilde_number(6), PageDown)
+  assert_eq(ConsoleKey::from_csi_tilde_number(15), F5)
+  assert_eq(ConsoleKey::from_csi_tilde_number(24), F12)
+}
+
+///|
+test "decode csi modifiers" {
+  assert_eq(decode_csi_modifier(50), (true, false, false))
+  assert_eq(decode_csi_modifier(51), (false, true, false))
+  assert_eq(decode_csi_modifier(53), (false, false, true))
+  assert_eq(decode_csi_modifier(56), (true, true, true))
+}
+
+///|
+test "consolekeyinfo accessors" {
+  let info = ConsoleKeyInfo::new('A', A, true, false, true)
+  assert_eq(info.key_char, 'A')
+  assert_eq(info.key, A)
+  assert_eq(info.shift, true)
+  assert_eq(info.alt, false)
+  assert_eq(info.control, true)
+}
+
+///|
+test "line buffers support unicode chars" {
+  let left = ['A', '中']
+  let right = ['B', '😀']
+  assert_eq(line_from_buffers(left, right), "A中😀B")
+}

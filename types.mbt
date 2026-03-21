@@ -18,7 +18,7 @@ pub enum ConsoleColor {
   Magenta = 13
   Yellow = 14
   White = 15
-}
+} derive(Show, Eq)
 
 ///|
 pub fn ConsoleColor::to_int(self : ConsoleColor) -> Int = "%identity"
@@ -120,15 +120,29 @@ pub(all) enum ConsoleKey {
   F22 = 133
   F23 = 134
   F24 = 135
-}
+} derive(Show, Eq)
 
 ///|
-pub(all) struct ConsoleKeyInfo {
+pub fn ConsoleKey::to_int(self : ConsoleKey) -> Int = "%identity"
+
+///|
+pub struct ConsoleKeyInfo {
   key_char : Char
   key : ConsoleKey
   shift : Bool
   alt : Bool
   control : Bool
+}
+
+///|
+pub fn ConsoleKeyInfo::new(
+  key_char : Char,
+  key : ConsoleKey,
+  shift : Bool,
+  alt : Bool,
+  control : Bool,
+) -> ConsoleKeyInfo {
+  { key_char, key, shift, alt, control }
 }
 
 ///|
