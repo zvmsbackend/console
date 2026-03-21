@@ -131,7 +131,35 @@ int32_t console_poll(int32_t fd, int16_t events, int32_t timeout_ms) {
 
 MOONBIT_FFI_EXPORT
 int32_t console_write(int32_t fd, const uint8_t *buffer, int32_t size) {
-    return (int32_t)write(fd, buffer, (size_t)size);
+    int32_t remaining = size;
+    const uint8_t *ptr = buffer;
+
+    while (remaining > 0) {
+        ssize_t n = write(fd, ptr, (size_t)remaining);
+        if (n > 0) {
+            ptr += n;
+            remaining -= (int32_t)n;
+            continue;
+        }
+
+        if (n == -1 && errno == EPIPE) {
+            // Match .NET Unix behavior: treat broken pipe as successful write.
+            return size;
+        }
+
+        if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            struct pollfd pfd;
+            pfd.fd = fd;
+            pfd.events = POLLOUT;
+            pfd.revents = 0;
+            (void)poll(&pfd, 1, -1);
+            continue;
+        }
+
+        return -1;
+    }
+
+    return size;
 }
 
 MOONBIT_FFI_EXPORT

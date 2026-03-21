@@ -16,6 +16,8 @@ pub fn error_write(String) -> Int
 
 pub fn error_write_line(String) -> Int
 
+pub fn get_background_color() -> ConsoleColor?
+
 pub fn get_buffer_height() -> Int
 
 pub fn get_buffer_width() -> Int
@@ -25,6 +27,8 @@ pub fn get_cursor_left() -> Int
 pub fn get_cursor_position() -> (Int, Int)
 
 pub fn get_cursor_top() -> Int
+
+pub fn get_foreground_color() -> ConsoleColor?
 
 pub fn get_largest_window_height() -> Int
 

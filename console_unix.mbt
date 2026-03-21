@@ -19,6 +19,21 @@ let cancel_handlers : Array[(Int, (ConsoleSpecialKey) -> Bool)] = []
 let cancel_handlers_installed : Ref[Bool] = @ref.new(false)
 
 ///|
+let tracked_foreground_color : Ref[ConsoleColor?] = @ref.new(None)
+
+///|
+let tracked_background_color : Ref[ConsoleColor?] = @ref.new(None)
+
+///|
+let cached_cursor_left : Ref[Int] = @ref.new(0)
+
+///|
+let cached_cursor_top : Ref[Int] = @ref.new(0)
+
+///|
+let cached_cursor_valid : Ref[Bool] = @ref.new(false)
+
+///|
 pub fn add_cancel_key_press_handler(
   handler : (ConsoleSpecialKey) -> Bool,
 ) -> Int {
@@ -92,11 +107,13 @@ pub fn is_error_redirected() -> Bool {
 
 ///|
 fn write_mono(s : String) -> Int {
+  dispatch_pending_cancel_signal()
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDOUT_FS, bytes, bytes.length())
   if n < 0 {
     abort("console write failed")
   }
+  update_cached_cursor_after_write(s)
   n
 }
 
@@ -110,6 +127,7 @@ fn write_line_mono(s : String) -> Int {
 
 ///|
 pub fn error_write(s : String) -> Int {
+  dispatch_pending_cancel_signal()
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDERR_FD, bytes, bytes.length())
   if n < 0 {
@@ -172,6 +190,7 @@ pub fn clear() -> Unit {
 
 ///|
 pub fn set_foreground_color(color : ConsoleColor) -> Unit {
+  tracked_foreground_color.val = Some(color)
   if !is_output_redirected() {
     let cmd = "\u{1b}[3\{color.to_int()}m"
     write_mono(cmd) |> ignore
@@ -179,7 +198,13 @@ pub fn set_foreground_color(color : ConsoleColor) -> Unit {
 }
 
 ///|
+pub fn get_foreground_color() -> ConsoleColor? {
+  tracked_foreground_color.val
+}
+
+///|
 pub fn set_background_color(color : ConsoleColor) -> Unit {
+  tracked_background_color.val = Some(color)
   if !is_output_redirected() {
     let cmd = "\u{1b}[4\{color.to_int()}m"
     write_mono(cmd) |> ignore
@@ -187,7 +212,14 @@ pub fn set_background_color(color : ConsoleColor) -> Unit {
 }
 
 ///|
+pub fn get_background_color() -> ConsoleColor? {
+  tracked_background_color.val
+}
+
+///|
 pub fn reset_color() -> Unit {
+  tracked_foreground_color.val = None
+  tracked_background_color.val = None
   if !is_output_redirected() {
     write_mono("\u{1b}[0m") |> ignore
   }
@@ -307,13 +339,19 @@ pub fn set_cursor_position(left : Int, top : Int) -> Unit {
   if !is_output_redirected() {
     let cmd = "\u{1b}[\{top + 1};\{left + 1}H"
     write_mono(cmd) |> ignore
+    cache_cursor_position(left, top)
   }
 }
 
 ///|
 pub fn get_cursor_position() -> (Int, Int) {
+  dispatch_pending_cancel_signal()
   if is_input_redirected() || is_output_redirected() {
     return (0, 0)
+  }
+
+  if cached_cursor_valid.val {
+    return (cached_cursor_left.val, cached_cursor_top.val)
   }
 
   if @ffi.init_terminal() != 0 {
@@ -326,9 +364,11 @@ pub fn get_cursor_position() -> (Int, Int) {
 
   if report is Some(bytes) {
     if parse_cursor_report(bytes) is Some((left, top)) {
+      cache_cursor_position(left, top)
       return (left, top)
     }
   }
+  invalidate_cached_cursor_position()
   (0, 0)
 }
 
@@ -616,6 +656,66 @@ fn read_byte_blocking() -> Int {
     }
   }
   -1
+}
+
+///|
+fn invalidate_cached_cursor_position() -> Unit {
+  cached_cursor_valid.val = false
+}
+
+///|
+fn cache_cursor_position(left : Int, top : Int) -> Unit {
+  cached_cursor_left.val = left
+  cached_cursor_top.val = top
+  cached_cursor_valid.val = true
+}
+
+///|
+fn update_cached_cursor_after_write(s : String) -> Unit {
+  if !cached_cursor_valid.val {
+    return
+  }
+
+  let mut left = cached_cursor_left.val
+  let mut top = cached_cursor_top.val
+  let width = get_window_width()
+  let height = get_window_height()
+
+  for c in s {
+    let code = c.to_int()
+    if code == 27 {
+      invalidate_cached_cursor_position()
+      return
+    }
+    if code >= 32 && code < 127 {
+      left = left + 1
+      if left >= width {
+        invalidate_cached_cursor_position()
+        return
+      }
+      continue
+    }
+    if code == 13 {
+      left = 0
+      continue
+    }
+    if code == 10 {
+      left = 0
+      top = top + 1
+      if top >= height {
+        top = height - 1
+      }
+      continue
+    }
+    if code == 8 {
+      if left > 0 {
+        left = left - 1
+      }
+      continue
+    }
+  }
+
+  cache_cursor_position(left, top)
 }
 
 ///|
