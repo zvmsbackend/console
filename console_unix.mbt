@@ -25,7 +25,7 @@ pub fn is_error_redirected() -> Bool {
 }
 
 ///|
-pub fn write(s : String) -> Int {
+fn write_mono(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDOUT_FS, bytes, bytes.length())
   if n < 0 {
@@ -35,7 +35,7 @@ pub fn write(s : String) -> Int {
 }
 
 ///|
-pub fn write_line(s : String) -> Int {
+fn write_line_mono(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDOUT_FS, bytes, bytes.length())
   @ffi.write_fd(STDOUT_FS, @utf8.encode("\n"), 1) |> ignore
@@ -100,7 +100,7 @@ pub fn get_largest_window_height() -> Int {
 ///|
 pub fn clear() -> Unit {
   if !is_output_redirected() {
-    write("\u{1b}[2J\u{1b}[H") |> ignore
+    write_mono("\u{1b}[2J\u{1b}[H") |> ignore
   }
 }
 
@@ -108,7 +108,7 @@ pub fn clear() -> Unit {
 pub fn set_foreground_color(color : ConsoleColor) -> Unit {
   if !is_output_redirected() {
     let cmd = "\u{1b}[3\{color.to_int()}m"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
@@ -116,28 +116,28 @@ pub fn set_foreground_color(color : ConsoleColor) -> Unit {
 pub fn set_background_color(color : ConsoleColor) -> Unit {
   if !is_output_redirected() {
     let cmd = "\u{1b}[4\{color.to_int()}m"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
 ///|
 pub fn reset_color() -> Unit {
   if !is_output_redirected() {
-    write("\u{1b}[0m") |> ignore
+    write_mono("\u{1b}[0m") |> ignore
   }
 }
 
 ///|
 pub fn beep() -> Unit {
   if !is_output_redirected() {
-    write("\u{07}") |> ignore
+    write_mono("\u{07}") |> ignore
   }
 }
 
 ///|
 pub fn hide_cursor() -> Unit {
   if !is_output_redirected() {
-    write("\u{1b}[?25l") |> ignore
+    write_mono("\u{1b}[?25l") |> ignore
   }
 }
 
@@ -153,7 +153,7 @@ pub fn set_cursor_visible(visible : Bool) -> Unit {
 ///|
 pub fn show_cursor() -> Unit {
   if !is_output_redirected() {
-    write("\u{1b}[?25h") |> ignore
+    write_mono("\u{1b}[?25h") |> ignore
   }
 }
 
@@ -178,14 +178,14 @@ pub fn set_treat_control_c_as_input(value : Bool) -> Unit {
 ///|
 pub fn clear_line() -> Unit {
   if !is_output_redirected() {
-    write("\u{1b}[2K") |> ignore
+    write_mono("\u{1b}[2K") |> ignore
   }
 }
 
 ///|
 pub fn clear_to_end_of_line() -> Unit {
   if !is_output_redirected() {
-    write("\u{1b}[K") |> ignore
+    write_mono("\u{1b}[K") |> ignore
   }
 }
 
@@ -196,7 +196,7 @@ pub fn move_cursor_up(lines : Int) -> Unit {
   }
   if !is_output_redirected() && lines > 0 {
     let cmd = "\u{1b}[\{lines}A"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
@@ -207,7 +207,7 @@ pub fn move_cursor_down(lines : Int) -> Unit {
   }
   if !is_output_redirected() && lines > 0 {
     let cmd = "\u{1b}[\{lines}B"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
@@ -218,7 +218,7 @@ pub fn move_cursor_right(cols : Int) -> Unit {
   }
   if !is_output_redirected() && cols > 0 {
     let cmd = "\u{1b}[\{cols}C"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
@@ -229,7 +229,7 @@ pub fn move_cursor_left(cols : Int) -> Unit {
   }
   if !is_output_redirected() && cols > 0 {
     let cmd = "\u{1b}[\{cols}D"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
@@ -240,7 +240,7 @@ pub fn set_cursor_position(left : Int, top : Int) -> Unit {
   }
   if !is_output_redirected() {
     let cmd = "\u{1b}[\{top + 1};\{left + 1}H"
-    write(cmd) |> ignore
+    write_mono(cmd) |> ignore
   }
 }
 
@@ -254,7 +254,7 @@ pub fn get_cursor_position() -> (Int, Int) {
     return (0, 0)
   }
 
-  write("\u{1b}[6n") |> ignore
+  write_mono("\u{1b}[6n") |> ignore
   let report = read_escape_response()
   @ffi.uninit_terminal()
 
@@ -318,7 +318,7 @@ fn read_key_raw(intercept : Bool) -> ConsoleKeyInfo {
   if first == 27 {
     if !key_available() {
       if !intercept {
-        write("\u{1b}") |> ignore
+        write_mono("\u{1b}") |> ignore
       }
       return ConsoleKeyInfo::new('\u001b', Escape, false, false, false)
     }
@@ -339,7 +339,7 @@ fn read_key_raw(intercept : Bool) -> ConsoleKeyInfo {
       let shift = second >= 65 && second <= 90
       let control = second >= 1 && second <= 26
       if !intercept && second >= 32 {
-        write(second.unsafe_to_char().to_string()) |> ignore
+        write_mono(second.unsafe_to_char().to_string()) |> ignore
       }
       return ConsoleKeyInfo::new(
         second.unsafe_to_char(),
@@ -355,7 +355,7 @@ fn read_key_raw(intercept : Bool) -> ConsoleKeyInfo {
   if first >= 128 {
     let ch = read_utf8_char(first)
     if !intercept && !ch.is_control() {
-      write(ch.to_string()) |> ignore
+      write_mono(ch.to_string()) |> ignore
     }
     return ConsoleKeyInfo::new(ch, Space, false, false, false)
   }
@@ -366,7 +366,7 @@ fn read_key_raw(intercept : Bool) -> ConsoleKeyInfo {
   let control = first >= 1 && first <= 26
 
   if !intercept {
-    write(first.unsafe_to_char().to_string()) |> ignore
+    write_mono(first.unsafe_to_char().to_string()) |> ignore
   }
 
   ConsoleKeyInfo::new(first.unsafe_to_char(), key, shift, false, control)
@@ -462,7 +462,7 @@ pub fn read_line() -> String {
     match key_info.key {
       Enter => {
         if !is_output_redirected() {
-          write("\n") |> ignore
+          write_mono("\n") |> ignore
         }
         let line = line_from_buffers(left, right)
         @ffi.uninit_terminal()
@@ -527,9 +527,9 @@ fn render_line(left : Array[Char], right : Array[Char]) -> Unit {
   if is_output_redirected() {
     return
   }
-  write("\r") |> ignore
-  write(line_from_buffers(left, right)) |> ignore
-  write("\u{1b}[K") |> ignore
+  write_mono("\r") |> ignore
+  write_mono(line_from_buffers(left, right)) |> ignore
+  write_mono("\u{1b}[K") |> ignore
   if right.length() > 0 {
     move_cursor_left(right.length())
   }

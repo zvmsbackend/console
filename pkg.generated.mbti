@@ -54,6 +54,8 @@ pub fn move_cursor_right(Int) -> Unit
 
 pub fn move_cursor_up(Int) -> Unit
 
+pub fn newline() -> Unit
+
 pub fn read() -> Int
 
 pub fn read_key(intercept? : Bool) -> ConsoleKeyInfo
@@ -74,9 +76,9 @@ pub fn set_treat_control_c_as_input(Bool) -> Unit
 
 pub fn show_cursor() -> Unit
 
-pub fn write(String) -> Int
+pub fn[T : Show] write(T) -> Unit
 
-pub fn write_line(s? : String) -> Int
+pub fn[T : Show] write_line(T) -> Unit
 
 // Errors
 
