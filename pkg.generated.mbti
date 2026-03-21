@@ -14,7 +14,27 @@ pub fn error_write(String) -> Int
 
 pub fn error_write_line(String) -> Int
 
+pub fn get_buffer_height() -> Int
+
+pub fn get_buffer_width() -> Int
+
+pub fn get_cursor_left() -> Int
+
+pub fn get_cursor_position() -> (Int, Int)
+
+pub fn get_cursor_top() -> Int
+
+pub fn get_largest_window_height() -> Int
+
+pub fn get_largest_window_width() -> Int
+
+pub fn get_treat_control_c_as_input() -> Bool
+
+pub fn get_window_height() -> Int
+
 pub fn get_window_size() -> (Int, Int)
+
+pub fn get_window_width() -> Int
 
 pub fn hide_cursor() -> Unit
 
@@ -46,13 +66,17 @@ pub fn set_background_color(ConsoleColor) -> Unit
 
 pub fn set_cursor_position(Int, Int) -> Unit
 
+pub fn set_cursor_visible(Bool) -> Unit
+
 pub fn set_foreground_color(ConsoleColor) -> Unit
+
+pub fn set_treat_control_c_as_input(Bool) -> Unit
 
 pub fn show_cursor() -> Unit
 
 pub fn write(String) -> Int
 
-pub fn write_line(String) -> Int
+pub fn write_line(s? : String) -> Int
 
 // Errors
 

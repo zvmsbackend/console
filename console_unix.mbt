@@ -68,6 +68,36 @@ pub fn get_window_size() -> (Int, Int) {
 }
 
 ///|
+pub fn get_window_width() -> Int {
+  @ffi.get_window_width()
+}
+
+///|
+pub fn get_window_height() -> Int {
+  @ffi.get_window_height()
+}
+
+///|
+pub fn get_buffer_width() -> Int {
+  get_window_width()
+}
+
+///|
+pub fn get_buffer_height() -> Int {
+  get_window_height()
+}
+
+///|
+pub fn get_largest_window_width() -> Int {
+  get_window_width()
+}
+
+///|
+pub fn get_largest_window_height() -> Int {
+  get_window_height()
+}
+
+///|
 pub fn clear() -> Unit {
   if !is_output_redirected() {
     write("\u{1b}[2J\u{1b}[H") |> ignore
@@ -112,9 +142,36 @@ pub fn hide_cursor() -> Unit {
 }
 
 ///|
+pub fn set_cursor_visible(visible : Bool) -> Unit {
+  if visible {
+    show_cursor()
+  } else {
+    hide_cursor()
+  }
+}
+
+///|
 pub fn show_cursor() -> Unit {
   if !is_output_redirected() {
     write("\u{1b}[?25h") |> ignore
+  }
+}
+
+///|
+pub fn get_treat_control_c_as_input() -> Bool {
+  if is_input_redirected() {
+    return false
+  }
+  @ffi.get_signal_break() == 0
+}
+
+///|
+pub fn set_treat_control_c_as_input(value : Bool) -> Unit {
+  if !is_input_redirected() {
+    let enable_signal_break = if value { 0 } else { 1 }
+    if @ffi.set_signal_break(enable_signal_break) != 0 {
+      abort("failed to set signal break mode")
+    }
   }
 }
 
@@ -185,6 +242,40 @@ pub fn set_cursor_position(left : Int, top : Int) -> Unit {
     let cmd = "\u{1b}[\{top + 1};\{left + 1}H"
     write(cmd) |> ignore
   }
+}
+
+///|
+pub fn get_cursor_position() -> (Int, Int) {
+  if is_input_redirected() || is_output_redirected() {
+    return (0, 0)
+  }
+
+  if @ffi.init_terminal() != 0 {
+    return (0, 0)
+  }
+
+  write("\u{1b}[6n") |> ignore
+  let report = read_escape_response()
+  @ffi.uninit_terminal()
+
+  if report is Some(bytes) {
+    if parse_cursor_report(bytes) is Some((left, top)) {
+      return (left, top)
+    }
+  }
+  (0, 0)
+}
+
+///|
+pub fn get_cursor_left() -> Int {
+  let (left, _) = get_cursor_position()
+  left
+}
+
+///|
+pub fn get_cursor_top() -> Int {
+  let (_, top) = get_cursor_position()
+  top
 }
 
 ///|
@@ -457,6 +548,76 @@ fn read_byte_blocking() -> Int {
     }
   }
   -1
+}
+
+///|
+fn read_escape_response() -> Array[Byte]? {
+  let bytes : Array[Byte] = []
+  let mut count = 0
+  while count < 64 {
+    let ch = read_byte_blocking()
+    if ch < 0 {
+      return None
+    }
+    bytes.push(ch.to_byte())
+    if ch == 82 {
+      return Some(bytes)
+    }
+    count = count + 1
+  }
+  None
+}
+
+///|
+fn parse_cursor_report(bytes : Array[Byte]) -> (Int, Int)? {
+  if bytes.length() < 6 {
+    return None
+  }
+  if bytes[0].to_int() != 27 || bytes[1].to_int() != 91 {
+    return None
+  }
+
+  let mut i = 2
+  let mut row = 0
+  let mut has_row = false
+  while i < bytes.length() {
+    let ch = bytes[i].to_int()
+    if ch >= 48 && ch <= 57 {
+      row = row * 10 + (ch - 48)
+      has_row = true
+      i = i + 1
+      continue
+    }
+    if ch == 59 {
+      i = i + 1
+      break
+    }
+    return None
+  }
+
+  if !has_row || row <= 0 || i >= bytes.length() {
+    return None
+  }
+
+  let mut col = 0
+  let mut has_col = false
+  while i < bytes.length() {
+    let ch = bytes[i].to_int()
+    if ch >= 48 && ch <= 57 {
+      col = col * 10 + (ch - 48)
+      has_col = true
+      i = i + 1
+      continue
+    }
+    if ch == 82 {
+      if !has_col || col <= 0 {
+        return None
+      }
+      return Some((col - 1, row - 1))
+    }
+    return None
+  }
+  None
 }
 
 ///|

@@ -50,3 +50,15 @@ test "line buffers support unicode chars" {
   let right = ['B', '😀']
   assert_eq(line_from_buffers(left, right), "A中😀B")
 }
+
+///|
+test "parse cursor report valid" {
+  let bytes = [b'\x1b', b'[', b'1', b'2', b';', b'3', b'4', b'R']
+  assert_eq(parse_cursor_report(bytes), Some((33, 11)))
+}
+
+///|
+test "parse cursor report invalid" {
+  let missing_r = [b'\x1b', b'[', b'1', b';', b'1']
+  assert_eq(parse_cursor_report(missing_r), None)
+}

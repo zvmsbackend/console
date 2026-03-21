@@ -41,6 +41,12 @@ extern "c" fn c_console_read_stdin(buffer : Bytes, size : Int) -> Int = "console
 extern "c" fn c_console_stdin_ready() -> Bool = "console_stdin_ready"
 
 ///|
+extern "c" fn c_console_get_signal_break() -> Int = "console_get_signal_break"
+
+///|
+extern "c" fn c_console_set_signal_break(enable : Int) -> Int = "console_set_signal_break"
+
+///|
 pub fn isatty(fd : Int) -> Bool {
   c_console_isatty(fd)
 }
@@ -78,4 +84,14 @@ pub fn read_stdin(buffer : Bytes, size : Int) -> Int {
 ///|
 pub fn stdin_ready() -> Bool {
   c_console_stdin_ready()
+}
+
+///|
+pub fn get_signal_break() -> Int {
+  c_console_get_signal_break()
+}
+
+///|
+pub fn set_signal_break(enable : Int) -> Int {
+  c_console_set_signal_break(enable)
 }

@@ -2,6 +2,8 @@
 package "sennenki/console/ffi"
 
 // Values
+pub fn get_signal_break() -> Int
+
 pub fn get_window_height() -> Int
 
 pub fn get_window_width() -> Int
@@ -11,6 +13,8 @@ pub fn init_terminal() -> Int
 pub fn isatty(Int) -> Bool
 
 pub fn read_stdin(Bytes, Int) -> Int
+
+pub fn set_signal_break(Int) -> Int
 
 pub fn stdin_ready() -> Bool
 
