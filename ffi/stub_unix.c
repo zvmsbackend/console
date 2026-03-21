@@ -9,6 +9,7 @@
 #include <sys/poll.h>
 #include <errno.h>
 #include <signal.h>
+#include <fcntl.h>
 
 typedef struct {
     uint16_t row;
@@ -19,15 +20,29 @@ typedef struct {
 
 static struct termios s_orig_termios;
 static bool s_terminal_initialized = false;
-static volatile sig_atomic_t s_pending_signal = 0;
 static bool s_cancel_handlers_installed = false;
 static struct sigaction s_prev_sigint;
 static struct sigaction s_prev_sigquit;
+static int s_cancel_signal_write_fd = -1;
 
 static void console_cancel_signal_handler(int signum) {
-    if (s_pending_signal == 0) {
-        s_pending_signal = signum;
+    if (s_cancel_signal_write_fd < 0) {
+        return;
     }
+    uint8_t b = (uint8_t)signum;
+    ssize_t ignored = write(s_cancel_signal_write_fd, &b, 1);
+    (void)ignored;
+}
+
+static int set_nonblocking_fd(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        return -1;
+    }
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 MOONBIT_FFI_EXPORT
@@ -199,10 +214,15 @@ int32_t console_set_signal_break(int32_t enable) {
 }
 
 MOONBIT_FFI_EXPORT
-int32_t console_install_cancel_handlers(void) {
+int32_t console_install_cancel_handlers(int32_t write_fd) {
     if (s_cancel_handlers_installed) {
         return 0;
     }
+
+    if (set_nonblocking_fd(write_fd) != 0) {
+        return -1;
+    }
+    s_cancel_signal_write_fd = write_fd;
 
     struct sigaction sa;
     sa.sa_handler = console_cancel_signal_handler;
@@ -217,7 +237,6 @@ int32_t console_install_cancel_handlers(void) {
         return -1;
     }
 
-    s_pending_signal = 0;
     s_cancel_handlers_installed = true;
     return 0;
 }
@@ -234,16 +253,27 @@ int32_t console_restore_cancel_handlers(void) {
         return -1;
     }
 
-    s_pending_signal = 0;
+    s_cancel_signal_write_fd = -1;
     s_cancel_handlers_installed = false;
     return 0;
 }
 
 MOONBIT_FFI_EXPORT
-int32_t console_take_pending_signal(void) {
-    int32_t signum = (int32_t)s_pending_signal;
-    s_pending_signal = 0;
-    return signum;
+int32_t console_raise_default_signal(int32_t signum) {
+    struct sigaction sa;
+    sa.sa_handler = SIG_DFL;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    if (sigaction(signum, &sa, NULL) != 0) {
+        return -1;
+    }
+
+    if (kill(getpid(), signum) != 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 MOONBIT_FFI_EXPORT

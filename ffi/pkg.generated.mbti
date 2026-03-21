@@ -10,9 +10,11 @@ pub fn get_window_width() -> Int
 
 pub fn init_terminal() -> Int
 
-pub fn install_cancel_handlers() -> Int
+pub fn install_cancel_handlers(Int) -> Int
 
 pub fn isatty(Int) -> Bool
+
+pub fn raise_default_signal(Int) -> Int
 
 pub fn read_stdin(Bytes, Int) -> Int
 
@@ -21,8 +23,6 @@ pub fn restore_cancel_handlers() -> Int
 pub fn set_signal_break(Int) -> Int
 
 pub fn stdin_ready() -> Bool
-
-pub fn take_pending_signal() -> Int
 
 pub fn uninit_terminal() -> Unit
 

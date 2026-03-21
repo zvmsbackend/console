@@ -47,13 +47,15 @@ extern "c" fn c_console_get_signal_break() -> Int = "console_get_signal_break"
 extern "c" fn c_console_set_signal_break(enable : Int) -> Int = "console_set_signal_break"
 
 ///|
-extern "c" fn c_console_install_cancel_handlers() -> Int = "console_install_cancel_handlers"
+extern "c" fn c_console_install_cancel_handlers(write_fd : Int) -> Int = "console_install_cancel_handlers"
 
 ///|
 extern "c" fn c_console_restore_cancel_handlers() -> Int = "console_restore_cancel_handlers"
 
 ///|
-extern "c" fn c_console_take_pending_signal() -> Int = "console_take_pending_signal"
+extern "c" fn c_console_raise_default_signal(signum : Int) -> Int = "console_raise_default_signal"
+
+///|
 
 ///|
 pub fn isatty(fd : Int) -> Bool {
@@ -106,8 +108,8 @@ pub fn set_signal_break(enable : Int) -> Int {
 }
 
 ///|
-pub fn install_cancel_handlers() -> Int {
-  c_console_install_cancel_handlers()
+pub fn install_cancel_handlers(write_fd : Int) -> Int {
+  c_console_install_cancel_handlers(write_fd)
 }
 
 ///|
@@ -116,6 +118,8 @@ pub fn restore_cancel_handlers() -> Int {
 }
 
 ///|
-pub fn take_pending_signal() -> Int {
-  c_console_take_pending_signal()
+pub fn raise_default_signal(signum : Int) -> Int {
+  c_console_raise_default_signal(signum)
 }
+
+///|
