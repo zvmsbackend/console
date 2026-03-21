@@ -1,0 +1,12 @@
+import {
+  "sennenki/console/ffi",
+  "moonbitlang/core/encoding/utf8",
+}
+
+options(
+  targets: {
+    "console.mbt": [ "native" ],
+    "console_unix.mbt": [ "native" ],
+    "types.mbt": [ "native" ],
+  },
+)

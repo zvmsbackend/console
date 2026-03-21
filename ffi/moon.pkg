@@ -1,0 +1,4 @@
+options(
+  "native-stub": [ "stub_unix.c" ],
+  targets: { "ffi.mbt": [ "native" ] },
+)

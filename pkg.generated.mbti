@@ -1,0 +1,194 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "sennenki/console"
+
+// Values
+pub fn beep() -> Unit
+
+pub fn clear() -> Unit
+
+pub fn clear_line() -> Unit
+
+pub fn clear_to_end_of_line() -> Unit
+
+pub fn error_write_line(String) -> Int
+
+pub fn get_window_size() -> (Int, Int)
+
+pub fn hide_cursor() -> Unit
+
+pub fn is_error_redirected() -> Bool
+
+pub fn is_input_redirected() -> Bool
+
+pub fn is_output_redirected() -> Bool
+
+pub fn key_available() -> Bool
+
+pub fn move_cursor_down(Int) -> Unit
+
+pub fn move_cursor_left(Int) -> Unit
+
+pub fn move_cursor_right(Int) -> Unit
+
+pub fn move_cursor_up(Int) -> Unit
+
+pub fn read_key(Bool) -> ConsoleKeyInfo
+
+pub fn reset_color() -> Unit
+
+pub fn set_background_color(ConsoleColor) -> Unit
+
+pub fn set_cursor_position(Int, Int) -> Unit
+
+pub fn set_foreground_color(ConsoleColor) -> Unit
+
+pub fn show_cursor() -> Unit
+
+pub fn write(String) -> Int
+
+pub fn write_line(String) -> Int
+
+// Errors
+
+// Types and methods
+pub enum ConsoleColor {
+  Black
+  DarkBlue
+  DarkGreen
+  DarkCyan
+  DarkRed
+  DarkMagenta
+  DarkYellow
+  Gray
+  DarkGray
+  Blue
+  Green
+  Cyan
+  Red
+  Magenta
+  Yellow
+  White
+}
+pub fn ConsoleColor::to_int(Self) -> Int
+
+pub(all) enum ConsoleKey {
+  Backspace
+  Tab
+  Enter
+  Escape
+  Space
+  PageUp
+  PageDown
+  End
+  Home
+  LeftArrow
+  UpArrow
+  RightArrow
+  DownArrow
+  Insert
+  Delete
+  D0
+  D1
+  D2
+  D3
+  D4
+  D5
+  D6
+  D7
+  D8
+  D9
+  A
+  B
+  C
+  D
+  E
+  F
+  G
+  H
+  I
+  J
+  K
+  L
+  M
+  N
+  O
+  P
+  Q
+  R
+  S
+  T
+  U
+  V
+  W
+  X
+  Y
+  Z
+  LeftWindows
+  RightWindows
+  Apps
+  Sleep
+  NumPad0
+  NumPad1
+  NumPad2
+  NumPad3
+  NumPad4
+  NumPad5
+  NumPad6
+  NumPad7
+  NumPad8
+  NumPad9
+  Multiply
+  Add
+  Separator
+  Subtract
+  Decimal
+  Divide
+  F1
+  F2
+  F3
+  F4
+  F5
+  F6
+  F7
+  F8
+  F9
+  F10
+  F11
+  F12
+  F13
+  F14
+  F15
+  F16
+  F17
+  F18
+  F19
+  F20
+  F21
+  F22
+  F23
+  F24
+}
+
+pub(all) struct ConsoleKeyInfo {
+  key_char : Char
+  key : ConsoleKey
+  shift : Bool
+  alt : Bool
+  control : Bool
+}
+
+pub(all) enum ConsoleSpecialKey {
+  ControlC
+  ControlBreak
+}
+
+pub(all) enum StandardHandle {
+  StandardInput
+  StandardOutput
+  StandardError
+}
+
+// Type aliases
+
+// Traits
+

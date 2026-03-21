@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "sennenki/console/ffi"
+
+// Values
+pub fn get_window_height() -> Int
+
+pub fn get_window_width() -> Int
+
+pub fn init_terminal() -> Int
+
+pub fn isatty(Int) -> Bool
+
+pub fn read_stdin(Bytes, Int) -> Int
+
+pub fn stdin_ready() -> Bool
+
+pub fn uninit_terminal() -> Unit
+
+pub fn write_fd(Int, Bytes, Int) -> Int
+
+// Errors
+
+// Types and methods
+#external
+pub(all) type StdHandle
+
+pub(all) struct WinSize {
+  row : UInt
+  col : UInt
+  x_pixel : UInt
+  y_pixel : UInt
+}
+
+// Type aliases
+
+// Traits
+
