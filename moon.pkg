@@ -1,6 +1,7 @@
 import {
   "sennenki/console/ffi",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/ref",
 }
 
 options(

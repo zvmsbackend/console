@@ -10,6 +10,72 @@ const STDOUT_FS = 1
 const STDERR_FD = 2
 
 ///|
+let cancel_handler_next_id : Ref[Int] = @ref.new(1)
+
+///|
+let cancel_handlers : Array[(Int, (ConsoleSpecialKey) -> Bool)] = []
+
+///|
+let cancel_handlers_installed : Ref[Bool] = @ref.new(false)
+
+///|
+pub fn add_cancel_key_press_handler(
+  handler : (ConsoleSpecialKey) -> Bool,
+) -> Int {
+  if !cancel_handlers_installed.val {
+    if @ffi.install_cancel_handlers() != 0 {
+      abort("failed to install cancel signal handlers")
+    }
+    cancel_handlers_installed.val = true
+  }
+  let id = cancel_handler_next_id.val
+  cancel_handler_next_id.val = id + 1
+  cancel_handlers.push((id, handler))
+  id
+}
+
+///|
+pub fn remove_cancel_key_press_handler(handler_id : Int) -> Unit {
+  let before = cancel_handlers.length()
+  cancel_handlers.retain(entry => entry.0 != handler_id)
+  if before != cancel_handlers.length() && cancel_handlers.length() == 0 {
+    if @ffi.restore_cancel_handlers() != 0 {
+      abort("failed to restore cancel signal handlers")
+    }
+    cancel_handlers_installed.val = false
+  }
+}
+
+///|
+fn signal_to_special_key(signum : Int) -> ConsoleSpecialKey? {
+  match signum {
+    2 => Some(ControlC)
+    3 => Some(ControlBreak)
+    _ => None
+  }
+}
+
+///|
+fn dispatch_pending_cancel_signal() -> Unit {
+  let signum = @ffi.take_pending_signal()
+  if signum == 0 {
+    return
+  }
+  if signal_to_special_key(signum) is Some(key) {
+    let mut canceled = false
+    for entry in cancel_handlers {
+      let handler = entry.1
+      if handler(key) {
+        canceled = true
+      }
+    }
+    if !canceled {
+      abort("cancel signal received")
+    }
+  }
+}
+
+///|
 pub fn is_input_redirected() -> Bool {
   !@ffi.isatty(STDIN_FD)
 }
@@ -280,6 +346,7 @@ pub fn get_cursor_top() -> Int {
 
 ///|
 pub fn key_available() -> Bool {
+  dispatch_pending_cancel_signal()
   @ffi.stdin_ready()
 }
 
@@ -539,6 +606,7 @@ fn render_line(left : Array[Char], right : Array[Char]) -> Unit {
 fn read_byte_blocking() -> Int {
   let buffer = Bytes::new(1)
   while true {
+    dispatch_pending_cancel_signal()
     let n = @ffi.read_stdin(buffer, 1)
     if n > 0 {
       return buffer[0].to_int()

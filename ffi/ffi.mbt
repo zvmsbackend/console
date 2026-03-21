@@ -47,6 +47,15 @@ extern "c" fn c_console_get_signal_break() -> Int = "console_get_signal_break"
 extern "c" fn c_console_set_signal_break(enable : Int) -> Int = "console_set_signal_break"
 
 ///|
+extern "c" fn c_console_install_cancel_handlers() -> Int = "console_install_cancel_handlers"
+
+///|
+extern "c" fn c_console_restore_cancel_handlers() -> Int = "console_restore_cancel_handlers"
+
+///|
+extern "c" fn c_console_take_pending_signal() -> Int = "console_take_pending_signal"
+
+///|
 pub fn isatty(fd : Int) -> Bool {
   c_console_isatty(fd)
 }
@@ -94,4 +103,19 @@ pub fn get_signal_break() -> Int {
 ///|
 pub fn set_signal_break(enable : Int) -> Int {
   c_console_set_signal_break(enable)
+}
+
+///|
+pub fn install_cancel_handlers() -> Int {
+  c_console_install_cancel_handlers()
+}
+
+///|
+pub fn restore_cancel_handlers() -> Int {
+  c_console_restore_cancel_handlers()
+}
+
+///|
+pub fn take_pending_signal() -> Int {
+  c_console_take_pending_signal()
 }

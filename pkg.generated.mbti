@@ -2,6 +2,8 @@
 package "sennenki/console"
 
 // Values
+pub fn add_cancel_key_press_handler((ConsoleSpecialKey) -> Bool) -> Int
+
 pub fn beep() -> Unit
 
 pub fn clear() -> Unit
@@ -61,6 +63,8 @@ pub fn read() -> Int
 pub fn read_key(intercept? : Bool) -> ConsoleKeyInfo
 
 pub fn read_line() -> String
+
+pub fn remove_cancel_key_press_handler(Int) -> Unit
 
 pub fn reset_color() -> Unit
 

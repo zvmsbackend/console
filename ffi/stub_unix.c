@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <errno.h>
+#include <signal.h>
 
 typedef struct {
     uint16_t row;
@@ -18,6 +19,16 @@ typedef struct {
 
 static struct termios s_orig_termios;
 static bool s_terminal_initialized = false;
+static volatile sig_atomic_t s_pending_signal = 0;
+static bool s_cancel_handlers_installed = false;
+static struct sigaction s_prev_sigint;
+static struct sigaction s_prev_sigquit;
+
+static void console_cancel_signal_handler(int signum) {
+    if (s_pending_signal == 0) {
+        s_pending_signal = signum;
+    }
+}
 
 MOONBIT_FFI_EXPORT
 int32_t console_init_terminal(void) {
@@ -157,6 +168,54 @@ int32_t console_set_signal_break(int32_t enable) {
         raw.c_lflag &= ~ISIG;
     }
     return tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_install_cancel_handlers(void) {
+    if (s_cancel_handlers_installed) {
+        return 0;
+    }
+
+    struct sigaction sa;
+    sa.sa_handler = console_cancel_signal_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGINT, &sa, &s_prev_sigint) != 0) {
+        return -1;
+    }
+    if (sigaction(SIGQUIT, &sa, &s_prev_sigquit) != 0) {
+        sigaction(SIGINT, &s_prev_sigint, NULL);
+        return -1;
+    }
+
+    s_pending_signal = 0;
+    s_cancel_handlers_installed = true;
+    return 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_restore_cancel_handlers(void) {
+    if (!s_cancel_handlers_installed) {
+        return 0;
+    }
+
+    int ok_int = sigaction(SIGINT, &s_prev_sigint, NULL);
+    int ok_quit = sigaction(SIGQUIT, &s_prev_sigquit, NULL);
+    if (ok_int != 0 || ok_quit != 0) {
+        return -1;
+    }
+
+    s_pending_signal = 0;
+    s_cancel_handlers_installed = false;
+    return 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_take_pending_signal(void) {
+    int32_t signum = (int32_t)s_pending_signal;
+    s_pending_signal = 0;
+    return signum;
 }
 
 MOONBIT_FFI_EXPORT
