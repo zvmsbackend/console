@@ -138,6 +138,9 @@ extern "c" fn c_console_restore_cancel_handlers() -> Int = "console_restore_canc
 extern "c" fn c_console_raise_default_signal(signum : Int) -> Int = "console_raise_default_signal"
 
 ///|
+extern "c" fn c_console_take_pending_signal() -> Int = "console_take_pending_signal"
+
+///|
 
 ///|
 pub fn isatty(fd : Int) -> Bool {
@@ -337,6 +340,11 @@ pub fn restore_cancel_handlers() -> Int {
 ///|
 pub fn raise_default_signal(signum : Int) -> Int {
   c_console_raise_default_signal(signum)
+}
+
+///|
+pub fn take_pending_signal() -> Int {
+  c_console_take_pending_signal()
 }
 
 ///|

@@ -26,8 +26,10 @@ static bool s_cancel_handlers_installed = false;
 static struct sigaction s_prev_sigint;
 static struct sigaction s_prev_sigquit;
 static int s_cancel_signal_write_fd = -1;
+static volatile sig_atomic_t s_pending_signal = 0;
 
 static void console_cancel_signal_handler(int signum) {
+    s_pending_signal = signum;
     if (s_cancel_signal_write_fd < 0) {
         return;
     }
@@ -289,10 +291,14 @@ int32_t console_install_cancel_handlers(int32_t write_fd) {
         return 0;
     }
 
-    if (set_nonblocking_fd(write_fd) != 0) {
-        return -1;
+    if (write_fd >= 0) {
+        if (set_nonblocking_fd(write_fd) != 0) {
+            return -1;
+        }
+        s_cancel_signal_write_fd = write_fd;
+    } else {
+        s_cancel_signal_write_fd = -1;
     }
-    s_cancel_signal_write_fd = write_fd;
 
     struct sigaction sa;
     sa.sa_handler = console_cancel_signal_handler;
@@ -326,6 +332,13 @@ int32_t console_restore_cancel_handlers(void) {
     s_cancel_signal_write_fd = -1;
     s_cancel_handlers_installed = false;
     return 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_take_pending_signal(void) {
+    int32_t signum = (int32_t)s_pending_signal;
+    s_pending_signal = 0;
+    return signum;
 }
 
 MOONBIT_FFI_EXPORT

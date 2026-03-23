@@ -104,6 +104,8 @@ pub fn set_window_width(Int) -> Unit
 
 pub fn show_cursor() -> Unit
 
+pub async fn start_async_cancel_dispatcher() -> Unit
+
 pub fn[T : Show] write(T) -> Unit
 
 pub fn[T : Show] write_line(T) -> Unit

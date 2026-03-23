@@ -21,6 +21,7 @@ static int32_t s_last_key_code = 0;
 static int32_t s_last_key_modifiers = 0;
 static bool s_has_default_colors = false;
 static WORD s_default_colors = 0;
+static volatile LONG s_pending_signal = 0;
 
 #define RIGHT_ALT_PRESSED_BIT   0x0001
 #define LEFT_ALT_PRESSED_BIT    0x0002
@@ -214,6 +215,7 @@ static BOOL WINAPI console_ctrl_handler(DWORD ctrl_type) {
     } else {
         return FALSE;
     }
+    InterlockedExchange(&s_pending_signal, (LONG)sig);
     _write(s_cancel_signal_write_fd, &sig, 1);
     return TRUE;
 }
@@ -514,6 +516,11 @@ int32_t console_restore_cancel_handlers(void) {
     s_cancel_signal_write_fd = -1;
     s_cancel_handlers_installed = false;
     return 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_take_pending_signal(void) {
+    return (int32_t)InterlockedExchange(&s_pending_signal, 0);
 }
 
 MOONBIT_FFI_EXPORT

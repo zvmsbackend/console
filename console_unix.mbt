@@ -62,29 +62,14 @@ let skip_lf_after_cr_in_redirected : Ref[Bool] = @ref.new(false)
 
 ///|
 #cfg(not(platform="windows"))
-fn run_async(f : async () -> Unit noraise) -> Unit = "%async.run"
-
-///|
-#cfg(not(platform="windows"))
 pub fn add_cancel_key_press_handler(
   handler : (ConsoleSpecialKey) -> Bool,
 ) -> Int {
   if !cancel_handlers_installed.val {
-    let (read_end, write_end) = @pipe.pipe() catch {
-      err => abort("failed to create cancel signal pipe: \{err}")
-    }
-    if @ffi.install_cancel_handlers(write_end.fd()) != 0 {
-      read_end.close()
-      write_end.close()
+    if @ffi.install_cancel_handlers(-1) != 0 {
       abort("failed to install cancel signal handlers")
     }
-    cancel_signal_pipe_read.val = Some(read_end)
-    cancel_signal_pipe_write.val = Some(write_end)
     cancel_handlers_installed.val = true
-    if !cancel_dispatcher_started.val {
-      cancel_dispatcher_started.val = true
-      run_async(cancel_signal_dispatch_loop_noraise)
-    }
   }
   let id = cancel_handler_next_id.val
   cancel_handler_next_id.val = id + 1
@@ -102,6 +87,7 @@ pub fn remove_cancel_key_press_handler(handler_id : Int) -> Unit {
       abort("failed to restore cancel signal handlers")
     }
     cancel_handlers_installed.val = false
+    cancel_dispatcher_started.val = false
     if cancel_signal_pipe_read.val is Some(read_end) {
       read_end.close()
       cancel_signal_pipe_read.val = None
@@ -147,6 +133,43 @@ fn dispatch_cancel_signal(signum : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+fn dispatch_pending_cancel_signal_sync() -> Unit {
+  let signum = @ffi.take_pending_signal()
+  if signum > 0 {
+    dispatch_cancel_signal(signum)
+  }
+}
+
+///|
+#cfg(not(platform="windows"))
+pub async fn start_async_cancel_dispatcher() -> Unit {
+  if cancel_dispatcher_started.val {
+    return
+  }
+  let (read_end, write_end) = @pipe.pipe() catch {
+    _ => abort("start_async_cancel_dispatcher requires async event loop")
+  }
+  if cancel_handlers_installed.val {
+    if @ffi.restore_cancel_handlers() != 0 {
+      abort("failed to restore cancel signal handlers")
+    }
+  }
+  if @ffi.install_cancel_handlers(write_end.fd()) != 0 {
+    read_end.close()
+    write_end.close()
+    abort("failed to install async cancel signal handlers")
+  }
+  cancel_signal_pipe_read.val = Some(read_end)
+  cancel_signal_pipe_write.val = Some(write_end)
+  cancel_handlers_installed.val = true
+  cancel_dispatcher_started.val = true
+  @async.with_task_group(fn(tg) {
+    tg.spawn_bg(no_wait=true, async fn() { cancel_signal_dispatch_loop() })
+  })
+}
+
+///|
+#cfg(not(platform="windows"))
 async fn cancel_signal_dispatch_loop() -> Unit {
   let buf = FixedArray::make(1, b'\x00')
   while true {
@@ -155,7 +178,7 @@ async fn cancel_signal_dispatch_loop() -> Unit {
       continue
     }
     if cancel_signal_pipe_read.val is Some(read_end) {
-      let n = read_end.read(buf, max_len=1)
+      let n = read_end.read(buf, max_len=1) catch { _ => break }
       if n <= 0 {
         @async.pause()
         continue
@@ -164,14 +187,6 @@ async fn cancel_signal_dispatch_loop() -> Unit {
       continue
     }
     @async.pause()
-  }
-}
-
-///|
-#cfg(not(platform="windows"))
-async fn cancel_signal_dispatch_loop_noraise() -> Unit noraise {
-  cancel_signal_dispatch_loop() catch {
-    _ => ()
   }
 }
 
@@ -651,12 +666,14 @@ pub fn get_cursor_top() -> Int {
 ///|
 #cfg(not(platform="windows"))
 pub fn key_available() -> Bool {
+  dispatch_pending_cancel_signal_sync()
   @ffi.stdin_ready()
 }
 
 ///|
 #cfg(not(platform="windows"))
 pub fn read() -> Int {
+  dispatch_pending_cancel_signal_sync()
   if is_input_redirected() {
     return read_redirected_char()
   }
@@ -673,6 +690,7 @@ pub fn read() -> Int {
 ///|
 #cfg(not(platform="windows"))
 pub fn read_key(intercept? : Bool = false) -> ConsoleKeyInfo {
+  dispatch_pending_cancel_signal_sync()
   if is_input_redirected() {
     abort("Console.ReadKey requires interactive stdin")
   }
@@ -829,6 +847,7 @@ fn decode_csi_modifier(mod_code : Int) -> (Bool, Bool, Bool) {
 ///|
 #cfg(not(platform="windows"))
 pub fn read_line() -> String {
+  dispatch_pending_cancel_signal_sync()
   if is_input_redirected() {
     return read_line_redirected()
   }
@@ -920,8 +939,10 @@ fn render_line(left : Array[Char], right : Array[Char]) -> Unit {
 fn read_byte_blocking() -> Int {
   let buffer = Bytes::new(1)
   while true {
+    dispatch_pending_cancel_signal_sync()
     let n = @ffi.read_stdin(buffer, 1)
     if n > 0 {
+      dispatch_pending_cancel_signal_sync()
       return buffer[0].to_int()
     }
     if n < 0 {

@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/async",
+  "moonbitlang/core/env",
+  "moonbitlang/core/ref",
+  "sennenki/console",
+}
+
+options(
+  "is-main": true,
+)
