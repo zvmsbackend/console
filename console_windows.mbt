@@ -58,6 +58,14 @@ let cached_cursor_valid : Ref[Bool] = @ref.new(false)
 
 ///|
 #cfg(platform="windows")
+const SHORT_MAX = 32767
+
+///|
+#cfg(platform="windows")
+let skip_lf_after_cr_in_redirected : Ref[Bool] = @ref.new(false)
+
+///|
+#cfg(platform="windows")
 fn run_async(f : async () -> Unit noraise) -> Unit = "%async.run"
 
 ///|
@@ -319,7 +327,14 @@ pub fn get_window_top() -> Int {
 ///|
 #cfg(platform="windows")
 pub fn set_window_position(left : Int, top : Int) -> Unit {
-  if left < 0 || top < 0 {
+  let width = get_window_width()
+  let height = get_window_height()
+  let buffer_width = get_buffer_width()
+  let buffer_height = get_buffer_height()
+
+  if !window_position_in_bounds(
+      left, top, width, height, buffer_width, buffer_height,
+    ) {
     abort("left/top must be non-negative")
   }
   if @ffi.set_window_position(left, top) != 0 {
@@ -330,10 +345,56 @@ pub fn set_window_position(left : Int, top : Int) -> Unit {
 ///|
 #cfg(platform="windows")
 pub fn set_window_size(width : Int, height : Int) -> Unit {
+  if is_output_redirected() {
+    abort("set_window_size requires interactive stdout")
+  }
   if width <= 0 || height <= 0 {
     abort("width/height must be positive")
   }
+  let left = get_window_left()
+  let top = get_window_top()
+  let old_buffer_width = get_buffer_width()
+  let old_buffer_height = get_buffer_height()
+
+  if left >= SHORT_MAX - width {
+    abort("width out of range")
+  }
+  if top >= SHORT_MAX - height {
+    abort("height out of range")
+  }
+
+  let needed_buffer_width = if old_buffer_width < left + width {
+    left + width
+  } else {
+    old_buffer_width
+  }
+  let needed_buffer_height = if old_buffer_height < top + height {
+    top + height
+  } else {
+    old_buffer_height
+  }
+
+  let resized_buffer = needed_buffer_width != old_buffer_width ||
+    needed_buffer_height != old_buffer_height
+
+  if resized_buffer {
+    if @ffi.set_buffer_size(needed_buffer_width, needed_buffer_height) != 0 {
+      abort("failed to resize buffer for window size")
+    }
+  }
+
   if @ffi.set_window_size(width, height) != 0 {
+    if resized_buffer {
+      @ffi.set_buffer_size(old_buffer_width, old_buffer_height) |> ignore
+    }
+    let largest_w = get_largest_window_width()
+    let largest_h = get_largest_window_height()
+    if width > largest_w {
+      abort("width exceeds largest window width")
+    }
+    if height > largest_h {
+      abort("height exceeds largest window height")
+    }
     abort("failed to set window size")
   }
 }
@@ -341,12 +402,57 @@ pub fn set_window_size(width : Int, height : Int) -> Unit {
 ///|
 #cfg(platform="windows")
 pub fn set_buffer_size(width : Int, height : Int) -> Unit {
-  if width <= 0 || height <= 0 {
+  if !buffer_size_in_bounds(
+      width,
+      height,
+      get_window_left(),
+      get_window_top(),
+      get_window_width(),
+      get_window_height(),
+    ) {
     abort("width/height must be positive")
   }
   if @ffi.set_buffer_size(width, height) != 0 {
     abort("failed to set buffer size")
   }
+}
+
+///|
+#cfg(platform="windows")
+fn window_position_in_bounds(
+  left : Int,
+  top : Int,
+  width : Int,
+  height : Int,
+  buffer_width : Int,
+  buffer_height : Int,
+) -> Bool {
+  let new_right = left + width - 1
+  let new_bottom = top + height - 1
+  left >= 0 &&
+  new_right >= left &&
+  new_right <= buffer_width - 1 &&
+  top >= 0 &&
+  new_bottom >= top &&
+  new_bottom <= buffer_height - 1
+}
+
+///|
+#cfg(platform="windows")
+fn buffer_size_in_bounds(
+  width : Int,
+  height : Int,
+  window_left : Int,
+  window_top : Int,
+  window_width : Int,
+  window_height : Int,
+) -> Bool {
+  if width <= 0 || height <= 0 || width >= SHORT_MAX || height >= SHORT_MAX {
+    return false
+  }
+  let min_width = window_left + window_width
+  let min_height = window_top + window_height
+  width >= min_width && height >= min_height
 }
 
 ///|
@@ -689,7 +795,7 @@ pub fn key_available() -> Bool {
 #cfg(platform="windows")
 pub fn read() -> Int {
   if is_input_redirected() {
-    abort("Console.Read requires interactive stdin")
+    return read_redirected_char()
   }
   let _ = @ffi.init_terminal()
   let ch = read_byte_blocking()
@@ -745,7 +851,7 @@ fn read_key_raw(intercept : Bool) -> ConsoleKeyInfo {
 #cfg(platform="windows")
 pub fn read_line() -> String {
   if is_input_redirected() {
-    abort("Console.ReadLine requires interactive stdin")
+    return read_line_redirected()
   }
   let _ = @ffi.init_terminal()
   let left : Array[Char] = []
@@ -844,6 +950,108 @@ fn read_byte_blocking() -> Int {
     }
   }
   -1
+}
+
+///|
+#cfg(platform="windows")
+fn read_redirected_byte() -> Int {
+  let buffer = Bytes::new(1)
+  while true {
+    let n = @ffi.read_stdin(buffer, 1)
+    if n > 0 {
+      return buffer[0].to_int()
+    }
+    if n == 0 {
+      return -1
+    }
+    if n < 0 {
+      return -1
+    }
+  }
+  -1
+}
+
+///|
+#cfg(platform="windows")
+fn read_redirected_byte_for_line() -> Int {
+  while true {
+    let ch = read_redirected_byte()
+    if ch < 0 {
+      return -1
+    }
+    if skip_lf_after_cr_in_redirected.val && ch == 10 {
+      skip_lf_after_cr_in_redirected.val = false
+      continue
+    }
+    skip_lf_after_cr_in_redirected.val = false
+    return ch
+  }
+  -1
+}
+
+///|
+#cfg(platform="windows")
+fn read_redirected_char() -> Int {
+  let first = read_redirected_byte()
+  if first < 0 {
+    return -1
+  }
+  if first <= 127 {
+    return first
+  }
+
+  if first >= 194 && first <= 223 {
+    let b2 = read_redirected_byte()
+    if b2 < 0 || b2 < 128 || b2 > 191 {
+      return 65533
+    }
+    return ((first & 0x1F) << 6) | (b2 & 0x3F)
+  }
+
+  if first >= 224 && first <= 239 {
+    let b2 = read_redirected_byte()
+    let b3 = read_redirected_byte()
+    if b2 < 128 || b2 > 191 || b3 < 128 || b3 > 191 {
+      return 65533
+    }
+    return ((first & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F)
+  }
+
+  if first >= 240 && first <= 244 {
+    let b2 = read_redirected_byte()
+    let b3 = read_redirected_byte()
+    let b4 = read_redirected_byte()
+    if b2 < 128 || b2 > 191 || b3 < 128 || b3 > 191 || b4 < 128 || b4 > 191 {
+      return 65533
+    }
+    return ((first & 0x07) << 18) |
+      ((b2 & 0x3F) << 12) |
+      ((b3 & 0x3F) << 6) |
+      (b4 & 0x3F)
+  }
+
+  65533
+}
+
+///|
+#cfg(platform="windows")
+fn read_line_redirected() -> String {
+  let bytes : Array[Byte] = []
+  while true {
+    let ch = read_redirected_byte_for_line()
+    if ch < 0 {
+      return @utf8.decode_lossy(Bytes::from_array(bytes))
+    }
+    if ch == 10 {
+      return @utf8.decode_lossy(Bytes::from_array(bytes))
+    }
+    if ch == 13 {
+      skip_lf_after_cr_in_redirected.val = true
+      return @utf8.decode_lossy(Bytes::from_array(bytes))
+    }
+    bytes.push(ch.to_byte())
+  }
+  @utf8.decode_lossy(Bytes::from_array(bytes))
 }
 
 ///|

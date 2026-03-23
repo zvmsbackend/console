@@ -145,6 +145,27 @@ static int win_get_console_size(int *width, int *height) {
     return 0;
 }
 
+static HANDLE win_handle_from_fd(int32_t fd) {
+    if (fd == 0) {
+        return GetStdHandle(STD_INPUT_HANDLE);
+    }
+    if (fd == 1) {
+        return GetStdHandle(STD_OUTPUT_HANDLE);
+    }
+    if (fd == 2) {
+        return GetStdHandle(STD_ERROR_HANDLE);
+    }
+    return NULL;
+}
+
+static bool win_is_console_handle(HANDLE h) {
+    DWORD mode = 0;
+    if (h == NULL || h == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    return GetConsoleMode(h, &mode) != 0;
+}
+
 static int win_get_window_rect(SMALL_RECT *rect, COORD *buf_size) {
     CONSOLE_SCREEN_BUFFER_INFO info;
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -289,7 +310,75 @@ int32_t console_poll(int32_t fd, int16_t events, int32_t timeout_ms) {
 
 MOONBIT_FFI_EXPORT
 int32_t console_write(int32_t fd, const uint8_t *buffer, int32_t size) {
-    if (fd == 1 || fd == 2) ensure_vt_output_mode();
+    if (size <= 0) {
+        return 0;
+    }
+
+    HANDLE h = win_handle_from_fd(fd);
+    if (h != NULL && h != INVALID_HANDLE_VALUE) {
+        if (fd == 1 || fd == 2) {
+            ensure_vt_output_mode();
+        }
+
+        if (win_is_console_handle(h)) {
+            int wide_len = MultiByteToWideChar(
+                CP_UTF8,
+                MB_ERR_INVALID_CHARS,
+                (const char *)buffer,
+                size,
+                NULL,
+                0
+            );
+
+            if (wide_len > 0) {
+                WCHAR *wide = (WCHAR *)libc_malloc((size_t)wide_len * sizeof(WCHAR));
+                if (wide == NULL) {
+                    return -1;
+                }
+
+                int converted = MultiByteToWideChar(
+                    CP_UTF8,
+                    MB_ERR_INVALID_CHARS,
+                    (const char *)buffer,
+                    size,
+                    wide,
+                    wide_len
+                );
+                if (converted <= 0) {
+                    libc_free(wide);
+                    return -1;
+                }
+
+                DWORD chars_written = 0;
+                BOOL ok = WriteConsoleW(h, wide, (DWORD)wide_len, &chars_written, NULL);
+                libc_free(wide);
+
+                if (ok) {
+                    return size;
+                }
+
+                DWORD err = GetLastError();
+                if (err == ERROR_NO_DATA || err == ERROR_BROKEN_PIPE || err == ERROR_PIPE_NOT_CONNECTED) {
+                    return size;
+                }
+                return -1;
+            }
+            // If UTF-8 conversion fails, fall back to byte write path below.
+        }
+
+        DWORD written = 0;
+        BOOL ok = WriteFile(h, buffer, (DWORD)size, &written, NULL);
+        if (ok) {
+            return size;
+        }
+
+        DWORD err = GetLastError();
+        if (err == ERROR_NO_DATA || err == ERROR_BROKEN_PIPE || err == ERROR_PIPE_NOT_CONNECTED) {
+            return size;
+        }
+        return -1;
+    }
+
     return _write(fd, buffer, size);
 }
 

@@ -58,6 +58,10 @@ let cached_cursor_valid : Ref[Bool] = @ref.new(false)
 
 ///|
 #cfg(not(platform="windows"))
+let skip_lf_after_cr_in_redirected : Ref[Bool] = @ref.new(false)
+
+///|
+#cfg(not(platform="windows"))
 fn run_async(f : async () -> Unit noraise) -> Unit = "%async.run"
 
 ///|
@@ -654,7 +658,7 @@ pub fn key_available() -> Bool {
 #cfg(not(platform="windows"))
 pub fn read() -> Int {
   if is_input_redirected() {
-    abort("Console.Read requires interactive stdin")
+    return read_redirected_char()
   }
   let _ = @ffi.init_terminal()
   let ch = read_byte_blocking()
@@ -826,7 +830,7 @@ fn decode_csi_modifier(mod_code : Int) -> (Bool, Bool, Bool) {
 #cfg(not(platform="windows"))
 pub fn read_line() -> String {
   if is_input_redirected() {
-    abort("Console.ReadLine requires interactive stdin")
+    return read_line_redirected()
   }
   let _ = @ffi.init_terminal()
   let left : Array[Char] = []
@@ -925,6 +929,108 @@ fn read_byte_blocking() -> Int {
     }
   }
   -1
+}
+
+///|
+#cfg(not(platform="windows"))
+fn read_redirected_byte() -> Int {
+  let buffer = Bytes::new(1)
+  while true {
+    let n = @ffi.read_stdin(buffer, 1)
+    if n > 0 {
+      return buffer[0].to_int()
+    }
+    if n == 0 {
+      return -1
+    }
+    if n < 0 {
+      return -1
+    }
+  }
+  -1
+}
+
+///|
+#cfg(not(platform="windows"))
+fn read_redirected_byte_for_line() -> Int {
+  while true {
+    let ch = read_redirected_byte()
+    if ch < 0 {
+      return -1
+    }
+    if skip_lf_after_cr_in_redirected.val && ch == 10 {
+      skip_lf_after_cr_in_redirected.val = false
+      continue
+    }
+    skip_lf_after_cr_in_redirected.val = false
+    return ch
+  }
+  -1
+}
+
+///|
+#cfg(not(platform="windows"))
+fn read_redirected_char() -> Int {
+  let first = read_redirected_byte()
+  if first < 0 {
+    return -1
+  }
+  if first <= 127 {
+    return first
+  }
+
+  if first >= 194 && first <= 223 {
+    let b2 = read_redirected_byte()
+    if b2 < 0 || b2 < 128 || b2 > 191 {
+      return 65533
+    }
+    return ((first & 0x1F) << 6) | (b2 & 0x3F)
+  }
+
+  if first >= 224 && first <= 239 {
+    let b2 = read_redirected_byte()
+    let b3 = read_redirected_byte()
+    if b2 < 128 || b2 > 191 || b3 < 128 || b3 > 191 {
+      return 65533
+    }
+    return ((first & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F)
+  }
+
+  if first >= 240 && first <= 244 {
+    let b2 = read_redirected_byte()
+    let b3 = read_redirected_byte()
+    let b4 = read_redirected_byte()
+    if b2 < 128 || b2 > 191 || b3 < 128 || b3 > 191 || b4 < 128 || b4 > 191 {
+      return 65533
+    }
+    return ((first & 0x07) << 18) |
+      ((b2 & 0x3F) << 12) |
+      ((b3 & 0x3F) << 6) |
+      (b4 & 0x3F)
+  }
+
+  65533
+}
+
+///|
+#cfg(not(platform="windows"))
+fn read_line_redirected() -> String {
+  let bytes : Array[Byte] = []
+  while true {
+    let ch = read_redirected_byte_for_line()
+    if ch < 0 {
+      return @utf8.decode_lossy(Bytes::from_array(bytes))
+    }
+    if ch == 10 {
+      return @utf8.decode_lossy(Bytes::from_array(bytes))
+    }
+    if ch == 13 {
+      skip_lf_after_cr_in_redirected.val = true
+      return @utf8.decode_lossy(Bytes::from_array(bytes))
+    }
+    bytes.push(ch.to_byte())
+  }
+  @utf8.decode_lossy(Bytes::from_array(bytes))
 }
 
 ///|
