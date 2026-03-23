@@ -6,6 +6,8 @@ pub fn add_cancel_key_press_handler((ConsoleSpecialKey) -> Bool) -> Int
 
 pub fn beep() -> Unit
 
+pub fn beep_tone(Int, Int) -> Unit
+
 pub fn clear() -> Unit
 
 pub fn clear_line() -> Unit
@@ -38,7 +40,11 @@ pub fn get_treat_control_c_as_input() -> Bool
 
 pub fn get_window_height() -> Int
 
+pub fn get_window_left() -> Int
+
 pub fn get_window_size() -> (Int, Int)
+
+pub fn get_window_top() -> Int
 
 pub fn get_window_width() -> Int
 
@@ -74,6 +80,12 @@ pub fn reset_color() -> Unit
 
 pub fn set_background_color(ConsoleColor) -> Unit
 
+pub fn set_buffer_height(Int) -> Unit
+
+pub fn set_buffer_size(Int, Int) -> Unit
+
+pub fn set_buffer_width(Int) -> Unit
+
 pub fn set_cursor_position(Int, Int) -> Unit
 
 pub fn set_cursor_visible(Bool) -> Unit
@@ -81,6 +93,14 @@ pub fn set_cursor_visible(Bool) -> Unit
 pub fn set_foreground_color(ConsoleColor) -> Unit
 
 pub fn set_treat_control_c_as_input(Bool) -> Unit
+
+pub fn set_window_height(Int) -> Unit
+
+pub fn set_window_position(Int, Int) -> Unit
+
+pub fn set_window_size(Int, Int) -> Unit
+
+pub fn set_window_width(Int) -> Unit
 
 pub fn show_cursor() -> Unit
 

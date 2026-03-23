@@ -1,4 +1,6 @@
-// stub_unix.c - Unix-specific C stubs
+// stub_unix.c - Unix-specific native stubs
+
+#ifndef _WIN32
 
 #include <moonbit.h>
 #include <stdint.h>
@@ -113,6 +115,26 @@ bool console_stdin_ready(void) {
 }
 
 MOONBIT_FFI_EXPORT
+int32_t console_read_key_event(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_last_key_char(void) {
+    return 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_last_key_code(void) {
+    return 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_last_key_modifiers(void) {
+    return 0;
+}
+
+MOONBIT_FFI_EXPORT
 int32_t console_get_window_size(console_win_size *ws) {
     struct winsize w;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) {
@@ -158,7 +180,6 @@ int32_t console_write(int32_t fd, const uint8_t *buffer, int32_t size) {
         }
 
         if (n == -1 && errno == EPIPE) {
-            // Match .NET Unix behavior: treat broken pipe as successful write.
             return size;
         }
 
@@ -211,6 +232,55 @@ int32_t console_set_signal_break(int32_t enable) {
         raw.c_lflag &= ~ISIG;
     }
     return tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_cursor_position(int32_t left, int32_t top) {
+    (void)left;
+    (void)top;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_cursor_left(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_cursor_top(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_clear_screen(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_foreground_color(int32_t color) {
+    (void)color;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_background_color(int32_t color) {
+    (void)color;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_foreground_color(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_background_color(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_reset_colors(void) {
+    return -1;
 }
 
 MOONBIT_FFI_EXPORT
@@ -293,3 +363,85 @@ int32_t console_get_window_height(void) {
     }
     return (int32_t)w.ws_row;
 }
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_buffer_width(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_buffer_height(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_largest_window_width(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_largest_window_height(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_window_left(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_window_top(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_window_position(int32_t left, int32_t top) {
+    (void)left;
+    (void)top;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_window_size(int32_t width, int32_t height) {
+    (void)width;
+    (void)height;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_buffer_size(int32_t width, int32_t height) {
+    (void)width;
+    (void)height;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_beep_tone(int32_t frequency, int32_t duration_ms) {
+    (void)frequency;
+    (void)duration_ms;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+moonbit_bytes_t console_get_title(void) {
+    return moonbit_make_bytes(0, 0);
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_title(const uint8_t *title) {
+    (void)title;
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_get_cursor_size(void) {
+    return -1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t console_set_cursor_size(int32_t size) {
+    (void)size;
+    return -1;
+}
+
+#endif

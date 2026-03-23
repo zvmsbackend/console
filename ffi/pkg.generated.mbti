@@ -2,9 +2,37 @@
 package "sennenki/console/ffi"
 
 // Values
+pub fn beep_tone(Int, Int) -> Int
+
+pub fn clear_screen() -> Int
+
+pub fn get_background_color() -> Int
+
+pub fn get_buffer_height() -> Int
+
+pub fn get_buffer_width() -> Int
+
+pub fn get_cursor_left() -> Int
+
+pub fn get_cursor_size() -> Int
+
+pub fn get_cursor_top() -> Int
+
+pub fn get_foreground_color() -> Int
+
+pub fn get_largest_window_height() -> Int
+
+pub fn get_largest_window_width() -> Int
+
 pub fn get_signal_break() -> Int
 
+pub fn get_title() -> Bytes
+
 pub fn get_window_height() -> Int
+
+pub fn get_window_left() -> Int
+
+pub fn get_window_top() -> Int
 
 pub fn get_window_width() -> Int
 
@@ -14,13 +42,39 @@ pub fn install_cancel_handlers(Int) -> Int
 
 pub fn isatty(Int) -> Bool
 
+pub fn last_key_char() -> Int
+
+pub fn last_key_code() -> Int
+
+pub fn last_key_modifiers() -> Int
+
 pub fn raise_default_signal(Int) -> Int
+
+pub fn read_key_event() -> Int
 
 pub fn read_stdin(Bytes, Int) -> Int
 
+pub fn reset_colors() -> Int
+
 pub fn restore_cancel_handlers() -> Int
 
+pub fn set_background_color(Int) -> Int
+
+pub fn set_buffer_size(Int, Int) -> Int
+
+pub fn set_cursor_position(Int, Int) -> Int
+
+pub fn set_cursor_size(Int) -> Int
+
+pub fn set_foreground_color(Int) -> Int
+
 pub fn set_signal_break(Int) -> Int
+
+pub fn set_title(Bytes) -> Int
+
+pub fn set_window_position(Int, Int) -> Int
+
+pub fn set_window_size(Int, Int) -> Int
 
 pub fn stdin_ready() -> Bool
 

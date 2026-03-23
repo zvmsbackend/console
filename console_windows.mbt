@@ -1,67 +1,67 @@
 // console_unix.mbt - Unix console implementation
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 const STDIN_FD = 0
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 const STDOUT_FS = 1
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 const STDERR_FD = 2
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cancel_handler_next_id : Ref[Int] = @ref.new(1)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cancel_handlers : Array[(Int, (ConsoleSpecialKey) -> Bool)] = []
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cancel_handlers_installed : Ref[Bool] = @ref.new(false)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cancel_dispatcher_started : Ref[Bool] = @ref.new(false)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cancel_signal_pipe_read : Ref[@pipe.PipeRead?] = @ref.new(None)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cancel_signal_pipe_write : Ref[@pipe.PipeWrite?] = @ref.new(None)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let tracked_foreground_color : Ref[ConsoleColor?] = @ref.new(None)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let tracked_background_color : Ref[ConsoleColor?] = @ref.new(None)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cached_cursor_left : Ref[Int] = @ref.new(0)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cached_cursor_top : Ref[Int] = @ref.new(0)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 let cached_cursor_valid : Ref[Bool] = @ref.new(false)
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn run_async(f : async () -> Unit noraise) -> Unit = "%async.run"
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn add_cancel_key_press_handler(
   handler : (ConsoleSpecialKey) -> Bool,
 ) -> Int {
@@ -89,7 +89,7 @@ pub fn add_cancel_key_press_handler(
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn remove_cancel_key_press_handler(handler_id : Int) -> Unit {
   let before = cancel_handlers.length()
   cancel_handlers.retain(entry => entry.0 != handler_id)
@@ -110,7 +110,7 @@ pub fn remove_cancel_key_press_handler(handler_id : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn signal_to_special_key(signum : Int) -> ConsoleSpecialKey? {
   match signum {
     2 => Some(ControlC)
@@ -120,7 +120,7 @@ fn signal_to_special_key(signum : Int) -> ConsoleSpecialKey? {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn dispatch_cancel_signal(signum : Int) -> Unit {
   if signum <= 0 {
     return
@@ -142,7 +142,7 @@ fn dispatch_cancel_signal(signum : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 async fn cancel_signal_dispatch_loop() -> Unit {
   let buf = FixedArray::make(1, b'\x00')
   while true {
@@ -164,7 +164,7 @@ async fn cancel_signal_dispatch_loop() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 async fn cancel_signal_dispatch_loop_noraise() -> Unit noraise {
   cancel_signal_dispatch_loop() catch {
     _ => ()
@@ -172,25 +172,25 @@ async fn cancel_signal_dispatch_loop_noraise() -> Unit noraise {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn is_input_redirected() -> Bool {
   !@ffi.isatty(STDIN_FD)
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn is_output_redirected() -> Bool {
   !@ffi.isatty(STDOUT_FS)
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn is_error_redirected() -> Bool {
   !@ffi.isatty(STDERR_FD)
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn write_mono(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDOUT_FS, bytes, bytes.length())
@@ -202,7 +202,7 @@ fn write_mono(s : String) -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn write_line_mono(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDOUT_FS, bytes, bytes.length())
@@ -211,7 +211,7 @@ fn write_line_mono(s : String) -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn error_write(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDERR_FD, bytes, bytes.length())
@@ -222,7 +222,7 @@ pub fn error_write(s : String) -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn error_write_line(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDERR_FD, bytes, bytes.length())
@@ -231,7 +231,7 @@ pub fn error_write_line(s : String) -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_window_size() -> (Int, Int) {
   let width = @ffi.get_window_width()
   let height = @ffi.get_window_height()
@@ -239,19 +239,19 @@ pub fn get_window_size() -> (Int, Int) {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_window_width() -> Int {
   @ffi.get_window_width()
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_window_height() -> Int {
   @ffi.get_window_height()
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_buffer_width() -> Int {
   let w = @ffi.get_buffer_width()
   if w > 0 {
@@ -262,7 +262,7 @@ pub fn get_buffer_width() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_buffer_height() -> Int {
   let h = @ffi.get_buffer_height()
   if h > 0 {
@@ -273,7 +273,7 @@ pub fn get_buffer_height() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_largest_window_width() -> Int {
   let w = @ffi.get_largest_window_width()
   if w > 0 {
@@ -284,7 +284,7 @@ pub fn get_largest_window_width() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_largest_window_height() -> Int {
   let h = @ffi.get_largest_window_height()
   if h > 0 {
@@ -295,7 +295,7 @@ pub fn get_largest_window_height() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_window_left() -> Int {
   let left = @ffi.get_window_left()
   if left >= 0 {
@@ -306,7 +306,7 @@ pub fn get_window_left() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_window_top() -> Int {
   let top = @ffi.get_window_top()
   if top >= 0 {
@@ -317,7 +317,7 @@ pub fn get_window_top() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_window_position(left : Int, top : Int) -> Unit {
   if left < 0 || top < 0 {
     abort("left/top must be non-negative")
@@ -328,7 +328,7 @@ pub fn set_window_position(left : Int, top : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_window_size(width : Int, height : Int) -> Unit {
   if width <= 0 || height <= 0 {
     abort("width/height must be positive")
@@ -339,7 +339,7 @@ pub fn set_window_size(width : Int, height : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_buffer_size(width : Int, height : Int) -> Unit {
   if width <= 0 || height <= 0 {
     abort("width/height must be positive")
@@ -350,31 +350,31 @@ pub fn set_buffer_size(width : Int, height : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_window_width(width : Int) -> Unit {
   set_window_size(width, get_window_height())
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_window_height(height : Int) -> Unit {
   set_window_size(get_window_width(), height)
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_buffer_width(width : Int) -> Unit {
   set_buffer_size(width, get_buffer_height())
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_buffer_height(height : Int) -> Unit {
   set_buffer_size(get_buffer_width(), height)
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn clear() -> Unit {
   if !is_output_redirected() {
     if @ffi.clear_screen() != 0 {
@@ -385,7 +385,7 @@ pub fn clear() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_foreground_color(color : ConsoleColor) -> Unit {
   if @ffi.set_foreground_color(color.to_int()) == 0 {
     tracked_foreground_color.val = Some(color)
@@ -399,7 +399,7 @@ pub fn set_foreground_color(color : ConsoleColor) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_foreground_color() -> ConsoleColor? {
   let c = @ffi.get_foreground_color()
   if c >= 0 {
@@ -409,7 +409,7 @@ pub fn get_foreground_color() -> ConsoleColor? {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_background_color(color : ConsoleColor) -> Unit {
   if @ffi.set_background_color(color.to_int()) == 0 {
     tracked_background_color.val = Some(color)
@@ -423,7 +423,7 @@ pub fn set_background_color(color : ConsoleColor) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_background_color() -> ConsoleColor? {
   let c = @ffi.get_background_color()
   if c >= 0 {
@@ -433,7 +433,7 @@ pub fn get_background_color() -> ConsoleColor? {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn reset_color() -> Unit {
   if @ffi.reset_colors() == 0 {
     tracked_foreground_color.val = None
@@ -448,7 +448,7 @@ pub fn reset_color() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn beep() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{07}") |> ignore
@@ -456,7 +456,7 @@ pub fn beep() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn beep_tone(frequency : Int, duration_ms : Int) -> Unit {
   if frequency < 37 || frequency > 32767 {
     abort("frequency out of range")
@@ -470,7 +470,42 @@ pub fn beep_tone(frequency : Int, duration_ms : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
+pub fn get_title() -> String {
+  @utf8.decode_lossy(@ffi.get_title())
+}
+
+///|
+#cfg(platform="windows")
+pub fn set_title(title : String) -> Unit {
+  if @ffi.set_title(@utf8.encode(title)) != 0 {
+    abort("failed to set console title")
+  }
+}
+
+///|
+#cfg(platform="windows")
+pub fn get_cursor_size() -> Int {
+  let size = @ffi.get_cursor_size()
+  if size < 0 {
+    abort("failed to get cursor size")
+  }
+  size
+}
+
+///|
+#cfg(platform="windows")
+pub fn set_cursor_size(size : Int) -> Unit {
+  if size < 1 || size > 100 {
+    abort("cursor size out of range")
+  }
+  if @ffi.set_cursor_size(size) != 0 {
+    abort("failed to set cursor size")
+  }
+}
+
+///|
+#cfg(platform="windows")
 pub fn hide_cursor() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[?25l") |> ignore
@@ -478,7 +513,7 @@ pub fn hide_cursor() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_cursor_visible(visible : Bool) -> Unit {
   if visible {
     show_cursor()
@@ -488,7 +523,7 @@ pub fn set_cursor_visible(visible : Bool) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn show_cursor() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[?25h") |> ignore
@@ -496,7 +531,7 @@ pub fn show_cursor() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_treat_control_c_as_input() -> Bool {
   if is_input_redirected() {
     return false
@@ -505,7 +540,7 @@ pub fn get_treat_control_c_as_input() -> Bool {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_treat_control_c_as_input(value : Bool) -> Unit {
   if !is_input_redirected() {
     let enable_signal_break = if value { 0 } else { 1 }
@@ -516,7 +551,7 @@ pub fn set_treat_control_c_as_input(value : Bool) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn clear_line() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[2K") |> ignore
@@ -524,7 +559,7 @@ pub fn clear_line() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn clear_to_end_of_line() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[K") |> ignore
@@ -532,7 +567,7 @@ pub fn clear_to_end_of_line() -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn move_cursor_up(lines : Int) -> Unit {
   if lines < 0 {
     abort("lines must be non-negative")
@@ -544,7 +579,7 @@ pub fn move_cursor_up(lines : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn move_cursor_down(lines : Int) -> Unit {
   if lines < 0 {
     abort("lines must be non-negative")
@@ -556,7 +591,7 @@ pub fn move_cursor_down(lines : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn move_cursor_right(cols : Int) -> Unit {
   if cols < 0 {
     abort("cols must be non-negative")
@@ -568,7 +603,7 @@ pub fn move_cursor_right(cols : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn move_cursor_left(cols : Int) -> Unit {
   if cols < 0 {
     abort("cols must be non-negative")
@@ -580,7 +615,7 @@ pub fn move_cursor_left(cols : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn set_cursor_position(left : Int, top : Int) -> Unit {
   if left < 0 || top < 0 {
     abort("left/top must be non-negative")
@@ -595,7 +630,7 @@ pub fn set_cursor_position(left : Int, top : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_cursor_position() -> (Int, Int) {
   if is_input_redirected() || is_output_redirected() {
     return (0, 0)
@@ -631,27 +666,27 @@ pub fn get_cursor_position() -> (Int, Int) {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_cursor_left() -> Int {
   let (left, _) = get_cursor_position()
   left
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn get_cursor_top() -> Int {
   let (_, top) = get_cursor_position()
   top
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn key_available() -> Bool {
   @ffi.stdin_ready()
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn read() -> Int {
   if is_input_redirected() {
     abort("Console.Read requires interactive stdin")
@@ -667,7 +702,7 @@ pub fn read() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn read_key(intercept? : Bool = false) -> ConsoleKeyInfo {
   if is_input_redirected() {
     abort("Console.ReadKey requires interactive stdin")
@@ -679,151 +714,35 @@ pub fn read_key(intercept? : Bool = false) -> ConsoleKeyInfo {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn read_key_raw(intercept : Bool) -> ConsoleKeyInfo {
-  let first = read_byte_blocking()
-  if first < 0 {
+  if @ffi.read_key_event() != 0 {
     return ConsoleKeyInfo::new('\u0000', Space, false, false, false)
   }
-  if first == 27 {
-    if !key_available() {
-      if !intercept {
-        write_mono("\u{1b}") |> ignore
-      }
-      return ConsoleKeyInfo::new('\u001b', Escape, false, false, false)
-    }
-    let second = read_byte_blocking()
-    if second == 91 {
-      return read_csi_key()
-    }
-    if second == 79 {
-      return read_ss3_key()
-    }
-    if second >= 0 {
-      let normalized = if second >= 97 && second <= 122 {
-        second - 32
-      } else {
-        second
-      }
-      let key = ConsoleKey::from_ascii(normalized)
-      let shift = second >= 65 && second <= 90
-      let control = second >= 1 && second <= 26
-      if !intercept && second >= 32 {
-        write_mono(second.unsafe_to_char().to_string()) |> ignore
-      }
-      return ConsoleKeyInfo::new(
-        second.unsafe_to_char(),
-        key,
-        shift,
-        true,
-        control,
-      )
-    }
-    return ConsoleKeyInfo::new('\u001b', Escape, false, true, false)
+
+  let char_code = @ffi.last_key_char()
+  let key_code = @ffi.last_key_code()
+  let mods = @ffi.last_key_modifiers()
+  let shift = (mods & 1) != 0
+  let alt = (mods & 2) != 0
+  let control = (mods & 4) != 0
+
+  let key = ConsoleKey::from_windows_vk(key_code)
+  let key_char = if char_code > 0 {
+    char_code.unsafe_to_char()
+  } else {
+    '\u0000'
   }
 
-  if first >= 128 {
-    let ch = read_utf8_char(first)
-    if !intercept && !ch.is_control() {
-      write_mono(ch.to_string()) |> ignore
-    }
-    return ConsoleKeyInfo::new(ch, Space, false, false, false)
+  if !intercept && char_code > 0 && !key_char.is_control() {
+    write_mono(key_char.to_string()) |> ignore
   }
 
-  let normalized = if first >= 97 && first <= 122 { first - 32 } else { first }
-  let key = ConsoleKey::from_ascii(normalized)
-  let shift = first >= 65 && first <= 90
-  let control = first >= 1 && first <= 26
-
-  if !intercept {
-    write_mono(first.unsafe_to_char().to_string()) |> ignore
-  }
-
-  ConsoleKeyInfo::new(first.unsafe_to_char(), key, shift, false, control)
+  ConsoleKeyInfo::new(key_char, key, shift, alt, control)
 }
 
 ///|
-#cfg(not(platform="windows"))
-fn read_ss3_key() -> ConsoleKeyInfo {
-  let code = read_byte_blocking()
-  let key = match code {
-    65 => UpArrow
-    66 => DownArrow
-    67 => RightArrow
-    68 => LeftArrow
-    72 => Home
-    70 => End
-    80 => F1
-    81 => F2
-    82 => F3
-    83 => F4
-    _ => Escape
-  }
-  ConsoleKeyInfo::new('\u0000', key, false, false, false)
-}
-
-///|
-#cfg(not(platform="windows"))
-fn read_csi_key() -> ConsoleKeyInfo {
-  let code = read_byte_blocking()
-  let key = match code {
-    65 => Some(UpArrow)
-    66 => Some(DownArrow)
-    67 => Some(RightArrow)
-    68 => Some(LeftArrow)
-    70 => Some(End)
-    72 => Some(Home)
-    _ => None
-  }
-  if key is Some(k) {
-    return ConsoleKeyInfo::new('\u0000', k, false, false, false)
-  }
-  if code < 48 || code > 57 {
-    return ConsoleKeyInfo::new('\u001b', Escape, false, false, false)
-  }
-
-  let mut n = code - 48
-  let mut next = read_byte_blocking()
-  while next >= 48 && next <= 57 {
-    n = n * 10 + (next - 48)
-    next = read_byte_blocking()
-  }
-
-  if next == 126 {
-    let mapped = ConsoleKey::from_csi_tilde_number(n)
-    return ConsoleKeyInfo::new('\u0000', mapped, false, false, false)
-  }
-
-  if next == 59 {
-    let mod_code = read_byte_blocking()
-    let final_code = read_byte_blocking()
-    let (shift, alt, control) = decode_csi_modifier(mod_code)
-    let key = match final_code {
-      65 => UpArrow
-      66 => DownArrow
-      67 => RightArrow
-      68 => LeftArrow
-      70 => End
-      72 => Home
-      _ => Escape
-    }
-    return ConsoleKeyInfo::new('\u0000', key, shift, alt, control)
-  }
-
-  ConsoleKeyInfo::new('\u001b', Escape, false, false, false)
-}
-
-///|
-#cfg(not(platform="windows"))
-fn decode_csi_modifier(mod_code : Int) -> (Bool, Bool, Bool) {
-  let shift = mod_code is (50 | 52 | 54 | 56)
-  let alt = mod_code is (51 | 52 | 55 | 56)
-  let control = mod_code is (53 | 54 | 55 | 56)
-  (shift, alt, control)
-}
-
-///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 pub fn read_line() -> String {
   if is_input_redirected() {
     abort("Console.ReadLine requires interactive stdin")
@@ -889,7 +808,7 @@ pub fn read_line() -> String {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn line_from_buffers(left : Array[Char], right : Array[Char]) -> String {
   let chars = Array::new(capacity=left.length() + right.length())
   chars.append(left)
@@ -898,7 +817,7 @@ fn line_from_buffers(left : Array[Char], right : Array[Char]) -> String {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn render_line(left : Array[Char], right : Array[Char]) -> Unit {
   if is_output_redirected() {
     return
@@ -912,7 +831,7 @@ fn render_line(left : Array[Char], right : Array[Char]) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn read_byte_blocking() -> Int {
   let buffer = Bytes::new(1)
   while true {
@@ -928,13 +847,13 @@ fn read_byte_blocking() -> Int {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn invalidate_cached_cursor_position() -> Unit {
   cached_cursor_valid.val = false
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn cache_cursor_position(left : Int, top : Int) -> Unit {
   cached_cursor_left.val = left
   cached_cursor_top.val = top
@@ -942,7 +861,7 @@ fn cache_cursor_position(left : Int, top : Int) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn update_cached_cursor_after_write(s : String) -> Unit {
   if !cached_cursor_valid.val {
     return
@@ -991,7 +910,7 @@ fn update_cached_cursor_after_write(s : String) -> Unit {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn read_escape_response() -> Array[Byte]? {
   let bytes : Array[Byte] = []
   let mut count = 0
@@ -1010,7 +929,7 @@ fn read_escape_response() -> Array[Byte]? {
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn parse_cursor_report(bytes : Array[Byte]) -> (Int, Int)? {
   if bytes.length() < 6 {
     return None
@@ -1063,66 +982,24 @@ fn parse_cursor_report(bytes : Array[Byte]) -> (Int, Int)? {
 }
 
 ///|
-#cfg(not(platform="windows"))
-fn is_utf8_continuation(b : Int) -> Bool {
-  b >= 128 && b <= 191
-}
-
-///|
-#cfg(not(platform="windows"))
-fn read_utf8_char(first : Int) -> Char {
-  if first <= 127 {
-    return first.unsafe_to_char()
-  }
-
-  if first >= 194 && first <= 223 {
-    let b2 = read_byte_blocking()
-    if !is_utf8_continuation(b2) {
-      return '\u{FFFD}'
-    }
-    let code = ((first & 0x1F) << 6) | (b2 & 0x3F)
-    return code.unsafe_to_char()
-  }
-
-  if first >= 224 && first <= 239 {
-    let b2 = read_byte_blocking()
-    let b3 = read_byte_blocking()
-    if !is_utf8_continuation(b2) || !is_utf8_continuation(b3) {
-      return '\u{FFFD}'
-    }
-    let code = ((first & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F)
-    return code.unsafe_to_char()
-  }
-
-  if first >= 240 && first <= 244 {
-    let b2 = read_byte_blocking()
-    let b3 = read_byte_blocking()
-    let b4 = read_byte_blocking()
-    if !is_utf8_continuation(b2) ||
-      !is_utf8_continuation(b3) ||
-      !is_utf8_continuation(b4) {
-      return '\u{FFFD}'
-    }
-    let code = ((first & 0x07) << 18) |
-      ((b2 & 0x3F) << 12) |
-      ((b3 & 0x3F) << 6) |
-      (b4 & 0x3F)
-    return code.unsafe_to_char()
-  }
-
-  '\u{FFFD}'
-}
-
-///|
-#cfg(not(platform="windows"))
-fn ConsoleKey::from_ascii(code : Int) -> ConsoleKey {
+#cfg(platform="windows")
+fn ConsoleKey::from_windows_vk(code : Int) -> ConsoleKey {
   match code {
     8 => Backspace
     9 => Tab
-    10 => Enter
     13 => Enter
     27 => Escape
     32 => Space
+    33 => PageUp
+    34 => PageDown
+    35 => End
+    36 => Home
+    37 => LeftArrow
+    38 => UpArrow
+    39 => RightArrow
+    40 => DownArrow
+    45 => Insert
+    46 => Delete
     48 => D0
     49 => D1
     50 => D2
@@ -1159,12 +1036,24 @@ fn ConsoleKey::from_ascii(code : Int) -> ConsoleKey {
     88 => X
     89 => Y
     90 => Z
+    112 => F1
+    113 => F2
+    114 => F3
+    115 => F4
+    116 => F5
+    117 => F6
+    118 => F7
+    119 => F8
+    120 => F9
+    121 => F10
+    122 => F11
+    123 => F12
     _ => Space
   }
 }
 
 ///|
-#cfg(not(platform="windows"))
+#cfg(platform="windows")
 fn console_color_from_int(color : Int) -> ConsoleColor {
   match color {
     0 => Black
@@ -1184,27 +1073,5 @@ fn console_color_from_int(color : Int) -> ConsoleColor {
     14 => Yellow
     15 => White
     _ => White
-  }
-}
-
-///|
-#cfg(not(platform="windows"))
-fn ConsoleKey::from_csi_tilde_number(n : Int) -> ConsoleKey {
-  match n {
-    1 => Home
-    2 => Insert
-    3 => Delete
-    4 => End
-    5 => PageUp
-    6 => PageDown
-    15 => F5
-    17 => F6
-    18 => F7
-    19 => F8
-    20 => F9
-    21 => F10
-    23 => F11
-    24 => F12
-    _ => Escape
   }
 }

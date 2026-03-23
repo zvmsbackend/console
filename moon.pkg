@@ -10,6 +10,7 @@ options(
   targets: {
     "console.mbt": [ "native" ],
     "console_unix.mbt": [ "native" ],
+    "console_windows.mbt": [ "native" ],
     "types.mbt": [ "native" ],
   },
 )

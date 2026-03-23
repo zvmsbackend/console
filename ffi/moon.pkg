@@ -1,4 +1,4 @@
 options(
-  "native-stub": [ "stub_unix.c" ],
+  "native-stub": [ "stub_unix.c", "stub_windows.c" ],
   targets: { "ffi.mbt": [ "native" ] },
 )
