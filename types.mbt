@@ -1,6 +1,7 @@
 // types.mbt - Console type definitions
 
 ///|
+/// Represents supported console colors.
 pub enum ConsoleColor {
   Black = 0
   DarkBlue = 1
@@ -21,9 +22,11 @@ pub enum ConsoleColor {
 } derive(Show, Eq)
 
 ///|
+/// Converts a console color to its platform numeric value.
 pub fn ConsoleColor::to_int(self : ConsoleColor) -> Int = "%identity"
 
 ///|
+/// Represents logical key values returned by `read_key`.
 pub(all) enum ConsoleKey {
   Backspace = 8
   Tab = 9
@@ -123,9 +126,11 @@ pub(all) enum ConsoleKey {
 } derive(Show, Eq)
 
 ///|
+/// Converts a console key to its numeric value.
 pub fn ConsoleKey::to_int(self : ConsoleKey) -> Int = "%identity"
 
 ///|
+/// Describes one keyboard event with key value and modifier flags.
 pub struct ConsoleKeyInfo {
   key_char : Char
   key : ConsoleKey
@@ -135,6 +140,7 @@ pub struct ConsoleKeyInfo {
 }
 
 ///|
+/// Creates a `ConsoleKeyInfo` value.
 pub fn ConsoleKeyInfo::new(
   key_char : Char,
   key : ConsoleKey,
@@ -146,12 +152,14 @@ pub fn ConsoleKeyInfo::new(
 }
 
 ///|
+/// Represents cancel-signal kinds used by cancel key handlers.
 pub(all) enum ConsoleSpecialKey {
   ControlC = 0
   ControlBreak = 1
 }
 
 ///|
+/// Represents standard process handles (stdin/stdout/stderr).
 pub(all) enum StandardHandle {
   StandardInput = 0
   StandardOutput = 1

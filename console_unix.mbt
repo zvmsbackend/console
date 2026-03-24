@@ -54,6 +54,7 @@ let skip_lf_after_cr_in_redirected : Ref[Bool] = @ref.new(false)
 
 ///|
 #cfg(not(platform="windows"))
+/// Registers a Ctrl+C/Ctrl+Break handler and returns a handler id.
 pub fn add_cancel_key_press_handler(
   handler : (ConsoleSpecialKey) -> Bool,
 ) -> Int {
@@ -71,6 +72,7 @@ pub fn add_cancel_key_press_handler(
 
 ///|
 #cfg(not(platform="windows"))
+/// Unregisters a previously registered cancel-key handler.
 pub fn remove_cancel_key_press_handler(handler_id : Int) -> Unit {
   let before = cancel_handlers.length()
   cancel_handlers.retain(entry => entry.0 != handler_id)
@@ -126,6 +128,7 @@ fn dispatch_pending_cancel_signal_sync() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Runs cooperative async cancel-signal polling in the current async runtime.
 pub async fn start_async_cancel_dispatcher() -> Unit {
   if !cancel_handlers_installed.val {
     if @ffi.install_cancel_handlers(-1) != 0 {
@@ -142,18 +145,21 @@ pub async fn start_async_cancel_dispatcher() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns true when stdin is redirected instead of attached to a terminal.
 pub fn is_input_redirected() -> Bool {
   !@ffi.isatty(STDIN_FD)
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns true when stdout is redirected instead of attached to a terminal.
 pub fn is_output_redirected() -> Bool {
   !@ffi.isatty(STDOUT_FS)
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns true when stderr is redirected instead of attached to a terminal.
 pub fn is_error_redirected() -> Bool {
   !@ffi.isatty(STDERR_FD)
 }
@@ -181,6 +187,7 @@ fn write_line_mono(s : String) -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Writes a string to standard error without a trailing newline.
 pub fn error_write(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDERR_FD, bytes, bytes.length())
@@ -192,6 +199,7 @@ pub fn error_write(s : String) -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Writes a string to standard error followed by a newline.
 pub fn error_write_line(s : String) -> Int {
   let bytes = @utf8.encode(s)
   let n = @ffi.write_fd(STDERR_FD, bytes, bytes.length())
@@ -201,6 +209,7 @@ pub fn error_write_line(s : String) -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the current console window width and height as a pair.
 pub fn get_window_size() -> (Int, Int) {
   let width = @ffi.get_window_width()
   let height = @ffi.get_window_height()
@@ -209,18 +218,21 @@ pub fn get_window_size() -> (Int, Int) {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the current console window width in columns.
 pub fn get_window_width() -> Int {
   @ffi.get_window_width()
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the current console window height in rows.
 pub fn get_window_height() -> Int {
   @ffi.get_window_height()
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the current screen buffer width.
 pub fn get_buffer_width() -> Int {
   let w = @ffi.get_buffer_width()
   if w > 0 {
@@ -232,6 +244,7 @@ pub fn get_buffer_width() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the current screen buffer height.
 pub fn get_buffer_height() -> Int {
   let h = @ffi.get_buffer_height()
   if h > 0 {
@@ -243,6 +256,7 @@ pub fn get_buffer_height() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the maximum window width supported by the current console.
 pub fn get_largest_window_width() -> Int {
   let w = @ffi.get_largest_window_width()
   if w > 0 {
@@ -254,6 +268,7 @@ pub fn get_largest_window_width() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the maximum window height supported by the current console.
 pub fn get_largest_window_height() -> Int {
   let h = @ffi.get_largest_window_height()
   if h > 0 {
@@ -265,6 +280,7 @@ pub fn get_largest_window_height() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the window left offset inside the screen buffer.
 pub fn get_window_left() -> Int {
   let left = @ffi.get_window_left()
   if left >= 0 {
@@ -276,6 +292,7 @@ pub fn get_window_left() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns the window top offset inside the screen buffer.
 pub fn get_window_top() -> Int {
   let top = @ffi.get_window_top()
   if top >= 0 {
@@ -287,6 +304,7 @@ pub fn get_window_top() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Moves the console window to the given left/top position.
 pub fn set_window_position(left : Int, top : Int) -> Unit {
   if left < 0 || top < 0 {
     abort("left/top must be non-negative")
@@ -298,6 +316,7 @@ pub fn set_window_position(left : Int, top : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the console window size in columns and rows.
 pub fn set_window_size(width : Int, height : Int) -> Unit {
   if width <= 0 || height <= 0 {
     abort("width/height must be positive")
@@ -309,6 +328,7 @@ pub fn set_window_size(width : Int, height : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the screen buffer size in columns and rows.
 pub fn set_buffer_size(width : Int, height : Int) -> Unit {
   if width <= 0 || height <= 0 {
     abort("width/height must be positive")
@@ -320,30 +340,35 @@ pub fn set_buffer_size(width : Int, height : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the console window width while preserving current height.
 pub fn set_window_width(width : Int) -> Unit {
   set_window_size(width, get_window_height())
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the console window height while preserving current width.
 pub fn set_window_height(height : Int) -> Unit {
   set_window_size(get_window_width(), height)
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the screen buffer width while preserving current height.
 pub fn set_buffer_width(width : Int) -> Unit {
   set_buffer_size(width, get_buffer_height())
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the screen buffer height while preserving current width.
 pub fn set_buffer_height(height : Int) -> Unit {
   set_buffer_size(get_buffer_width(), height)
 }
 
 ///|
 #cfg(not(platform="windows"))
+/// Clears the console and moves the cursor to the home position.
 pub fn clear() -> Unit {
   if !is_output_redirected() {
     if @ffi.clear_screen() != 0 {
@@ -355,6 +380,7 @@ pub fn clear() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the text foreground color.
 pub fn set_foreground_color(color : ConsoleColor) -> Unit {
   if @ffi.set_foreground_color(color.to_int()) == 0 {
     tracked_foreground_color.val = Some(color)
@@ -369,6 +395,7 @@ pub fn set_foreground_color(color : ConsoleColor) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Gets the currently tracked foreground color if available.
 pub fn get_foreground_color() -> ConsoleColor? {
   let c = @ffi.get_foreground_color()
   if c >= 0 {
@@ -379,6 +406,7 @@ pub fn get_foreground_color() -> ConsoleColor? {
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the text background color.
 pub fn set_background_color(color : ConsoleColor) -> Unit {
   if @ffi.set_background_color(color.to_int()) == 0 {
     tracked_background_color.val = Some(color)
@@ -393,6 +421,7 @@ pub fn set_background_color(color : ConsoleColor) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Gets the currently tracked background color if available.
 pub fn get_background_color() -> ConsoleColor? {
   let c = @ffi.get_background_color()
   if c >= 0 {
@@ -403,6 +432,7 @@ pub fn get_background_color() -> ConsoleColor? {
 
 ///|
 #cfg(not(platform="windows"))
+/// Resets foreground and background colors to defaults.
 pub fn reset_color() -> Unit {
   if @ffi.reset_colors() == 0 {
     tracked_foreground_color.val = None
@@ -418,6 +448,7 @@ pub fn reset_color() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Emits a simple bell sound when supported by the terminal.
 pub fn beep() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{07}") |> ignore
@@ -426,6 +457,7 @@ pub fn beep() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Emits a tone with frequency and duration (Windows only).
 pub fn beep_tone(frequency : Int, duration_ms : Int) -> Unit {
   if frequency < 37 || frequency > 32767 {
     abort("frequency out of range")
@@ -440,6 +472,7 @@ pub fn beep_tone(frequency : Int, duration_ms : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Hides the console cursor.
 pub fn hide_cursor() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[?25l") |> ignore
@@ -448,6 +481,7 @@ pub fn hide_cursor() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Shows or hides the console cursor.
 pub fn set_cursor_visible(visible : Bool) -> Unit {
   if visible {
     show_cursor()
@@ -458,6 +492,7 @@ pub fn set_cursor_visible(visible : Bool) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Shows the console cursor.
 pub fn show_cursor() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[?25h") |> ignore
@@ -466,6 +501,7 @@ pub fn show_cursor() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Gets whether Ctrl+C is treated as input instead of interrupt.
 pub fn get_treat_control_c_as_input() -> Bool {
   if is_input_redirected() {
     return false
@@ -475,6 +511,7 @@ pub fn get_treat_control_c_as_input() -> Bool {
 
 ///|
 #cfg(not(platform="windows"))
+/// Configures whether Ctrl+C is treated as input instead of interrupt.
 pub fn set_treat_control_c_as_input(value : Bool) -> Unit {
   if !is_input_redirected() {
     let enable_signal_break = if value { 0 } else { 1 }
@@ -486,6 +523,7 @@ pub fn set_treat_control_c_as_input(value : Bool) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Clears the current line and returns the cursor to column 0.
 pub fn clear_line() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[2K") |> ignore
@@ -494,6 +532,7 @@ pub fn clear_line() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Clears from the current cursor position to end of line.
 pub fn clear_to_end_of_line() -> Unit {
   if !is_output_redirected() {
     write_mono("\u{1b}[K") |> ignore
@@ -502,6 +541,7 @@ pub fn clear_to_end_of_line() -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Moves the cursor up by the given number of lines.
 pub fn move_cursor_up(lines : Int) -> Unit {
   if lines < 0 {
     abort("lines must be non-negative")
@@ -514,6 +554,7 @@ pub fn move_cursor_up(lines : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Moves the cursor down by the given number of lines.
 pub fn move_cursor_down(lines : Int) -> Unit {
   if lines < 0 {
     abort("lines must be non-negative")
@@ -526,6 +567,7 @@ pub fn move_cursor_down(lines : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Moves the cursor right by the given number of columns.
 pub fn move_cursor_right(cols : Int) -> Unit {
   if cols < 0 {
     abort("cols must be non-negative")
@@ -538,6 +580,7 @@ pub fn move_cursor_right(cols : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Moves the cursor left by the given number of columns.
 pub fn move_cursor_left(cols : Int) -> Unit {
   if cols < 0 {
     abort("cols must be non-negative")
@@ -550,6 +593,7 @@ pub fn move_cursor_left(cols : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Sets the cursor position using zero-based left/top coordinates.
 pub fn set_cursor_position(left : Int, top : Int) -> Unit {
   if left < 0 || top < 0 {
     abort("left/top must be non-negative")
@@ -565,6 +609,7 @@ pub fn set_cursor_position(left : Int, top : Int) -> Unit {
 
 ///|
 #cfg(not(platform="windows"))
+/// Gets the current cursor position as zero-based left/top coordinates.
 pub fn get_cursor_position() -> (Int, Int) {
   if is_input_redirected() || is_output_redirected() {
     return (0, 0)
@@ -601,6 +646,7 @@ pub fn get_cursor_position() -> (Int, Int) {
 
 ///|
 #cfg(not(platform="windows"))
+/// Gets the current zero-based cursor column.
 pub fn get_cursor_left() -> Int {
   let (left, _) = get_cursor_position()
   left
@@ -608,6 +654,7 @@ pub fn get_cursor_left() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Gets the current zero-based cursor row.
 pub fn get_cursor_top() -> Int {
   let (_, top) = get_cursor_position()
   top
@@ -615,6 +662,7 @@ pub fn get_cursor_top() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Returns true when input is available to read without blocking.
 pub fn key_available() -> Bool {
   dispatch_pending_cancel_signal_sync()
   @ffi.stdin_ready()
@@ -622,6 +670,7 @@ pub fn key_available() -> Bool {
 
 ///|
 #cfg(not(platform="windows"))
+/// Reads the next Unicode scalar value from console input or redirected input.
 pub fn read() -> Int {
   dispatch_pending_cancel_signal_sync()
   if is_input_redirected() {
@@ -639,6 +688,7 @@ pub fn read() -> Int {
 
 ///|
 #cfg(not(platform="windows"))
+/// Reads one key press and returns key plus modifier information.
 pub fn read_key(intercept? : Bool = false) -> ConsoleKeyInfo {
   dispatch_pending_cancel_signal_sync()
   if is_input_redirected() {
@@ -796,6 +846,7 @@ fn decode_csi_modifier(mod_code : Int) -> (Bool, Bool, Bool) {
 
 ///|
 #cfg(not(platform="windows"))
+/// Reads a line from input, excluding trailing newline characters.
 pub fn read_line() -> String {
   dispatch_pending_cancel_signal_sync()
   if is_input_redirected() {
