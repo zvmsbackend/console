@@ -7,6 +7,8 @@ fn print_usage() -> Unit {
   @console.write_line("  read-key")
   @console.write_line("  cancel-handled-read-key")
   @console.write_line("  cancel-unhandled-read-key")
+  @console.write_line("  cancel-handled-wait-signal")
+  @console.write_line("  cancel-unhandled-wait-signal")
   @console.write_line("  redirect-flags")
   @console.write_line("  window-size")
 }
@@ -66,6 +68,43 @@ fn run_cancel_unhandled_read_key() -> Unit {
 }
 
 ///|
+fn run_cancel_handled_wait_signal() -> Unit {
+  let handled : Ref[Bool] = @ref.new(false)
+  @console.add_cancel_key_press_handler(fn(key) {
+    match key {
+      ControlC => @console.write_line("HANDLED=ControlC")
+      ControlBreak => @console.write_line("HANDLED=ControlBreak")
+    }
+    handled.val = true
+    true
+  })
+  |> ignore
+
+  @console.write_line("READY")
+  while !handled.val {
+    @console.key_available() |> ignore
+  }
+  @console.write_line("AFTER_SIGNAL")
+}
+
+///|
+fn run_cancel_unhandled_wait_signal() -> Unit {
+  @console.add_cancel_key_press_handler(fn(key) {
+    match key {
+      ControlC => @console.write_line("UNHANDLED=ControlC")
+      ControlBreak => @console.write_line("UNHANDLED=ControlBreak")
+    }
+    false
+  })
+  |> ignore
+
+  @console.write_line("READY")
+  while true {
+    @console.key_available() |> ignore
+  }
+}
+
+///|
 fn run_redirect_flags() -> Unit {
   @console.write_line("IN=\{@console.is_input_redirected()}")
   @console.write_line("OUT=\{@console.is_output_redirected()}")
@@ -91,6 +130,8 @@ fn main {
     "read-key" => run_read_key()
     "cancel-handled-read-key" => run_cancel_handled_read_key()
     "cancel-unhandled-read-key" => run_cancel_unhandled_read_key()
+    "cancel-handled-wait-signal" => run_cancel_handled_wait_signal()
+    "cancel-unhandled-wait-signal" => run_cancel_unhandled_wait_signal()
     "redirect-flags" => run_redirect_flags()
     "window-size" => run_window_size()
     _ => print_usage()

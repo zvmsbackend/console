@@ -30,14 +30,6 @@ let cancel_dispatcher_started : Ref[Bool] = @ref.new(false)
 
 ///|
 #cfg(platform="windows")
-let cancel_signal_pipe_read : Ref[@pipe.PipeRead?] = @ref.new(None)
-
-///|
-#cfg(platform="windows")
-let cancel_signal_pipe_write : Ref[@pipe.PipeWrite?] = @ref.new(None)
-
-///|
-#cfg(platform="windows")
 let tracked_foreground_color : Ref[ConsoleColor?] = @ref.new(None)
 
 ///|
@@ -70,10 +62,8 @@ pub fn add_cancel_key_press_handler(
   handler : (ConsoleSpecialKey) -> Bool,
 ) -> Int {
   if !cancel_handlers_installed.val {
-    if !try_start_async_cancel_dispatcher() {
-      if @ffi.install_cancel_handlers(-1) != 0 {
-        abort("failed to install cancel signal handlers")
-      }
+    if @ffi.install_cancel_handlers(-1) != 0 {
+      abort("failed to install cancel signal handlers")
     }
     cancel_handlers_installed.val = true
   }
@@ -94,14 +84,6 @@ pub fn remove_cancel_key_press_handler(handler_id : Int) -> Unit {
     }
     cancel_handlers_installed.val = false
     cancel_dispatcher_started.val = false
-    if cancel_signal_pipe_read.val is Some(read_end) {
-      read_end.close()
-      cancel_signal_pipe_read.val = None
-    }
-    if cancel_signal_pipe_write.val is Some(write_end) {
-      write_end.close()
-      cancel_signal_pipe_write.val = None
-    }
   }
 }
 
@@ -149,49 +131,15 @@ fn dispatch_pending_cancel_signal_sync() -> Unit {
 ///|
 #cfg(platform="windows")
 pub async fn start_async_cancel_dispatcher() -> Unit {
-  if cancel_dispatcher_started.val {
-    return
-  }
-  let (read_end, write_end) = @pipe.pipe() catch {
-    _ => abort("start_async_cancel_dispatcher requires async event loop")
-  }
-  if cancel_handlers_installed.val {
-    if @ffi.restore_cancel_handlers() != 0 {
-      abort("failed to restore cancel signal handlers")
+  if !cancel_handlers_installed.val {
+    if @ffi.install_cancel_handlers(-1) != 0 {
+      abort("failed to install cancel signal handlers")
     }
+    cancel_handlers_installed.val = true
   }
-  if @ffi.install_cancel_handlers(write_end.fd()) != 0 {
-    read_end.close()
-    write_end.close()
-    abort("failed to install async cancel signal handlers")
-  }
-  cancel_signal_pipe_read.val = Some(read_end)
-  cancel_signal_pipe_write.val = Some(write_end)
-  cancel_handlers_installed.val = true
   cancel_dispatcher_started.val = true
-  @async.with_task_group(async fn(tg) {
-    tg.spawn_bg(no_wait=true, async fn() { cancel_signal_dispatch_loop() })
-  })
-}
-
-///|
-#cfg(platform="windows")
-async fn cancel_signal_dispatch_loop() -> Unit {
-  let buf = FixedArray::make(1, b'\x00')
-  while true {
-    if !cancel_handlers_installed.val {
-      @async.pause()
-      continue
-    }
-    if cancel_signal_pipe_read.val is Some(read_end) {
-      let n = read_end.read(buf, max_len=1) catch { _ => break }
-      if n <= 0 {
-        @async.pause()
-        continue
-      }
-      dispatch_cancel_signal(buf[0].to_int())
-      continue
-    }
+  while cancel_dispatcher_started.val {
+    dispatch_pending_cancel_signal_sync()
     @async.pause()
   }
 }

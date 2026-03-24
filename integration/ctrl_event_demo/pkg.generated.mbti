@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "sennenki/console/integration/test_console"
+package "sennenki/console/integration/ctrl_event_demo"
 
 // Values
 

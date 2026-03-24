@@ -204,9 +204,6 @@ static void ensure_vt_output_mode(void) {
 }
 
 static BOOL WINAPI console_ctrl_handler(DWORD ctrl_type) {
-    if (s_cancel_signal_write_fd < 0) {
-        return FALSE;
-    }
     uint8_t sig = 0;
     if (ctrl_type == CTRL_C_EVENT) {
         sig = 2;
@@ -215,8 +212,16 @@ static BOOL WINAPI console_ctrl_handler(DWORD ctrl_type) {
     } else {
         return FALSE;
     }
+
+    // Always publish pending signal for sync dispatch path.
     InterlockedExchange(&s_pending_signal, (LONG)sig);
-    _write(s_cancel_signal_write_fd, &sig, 1);
+
+    // Async dispatcher path uses a pipe; best-effort write.
+    if (s_cancel_signal_write_fd >= 0) {
+        _write(s_cancel_signal_write_fd, &sig, 1);
+    }
+
+    // Signal is handled by MoonBit-side dispatch.
     return TRUE;
 }
 

@@ -1,7 +1,6 @@
 import {
   "moonbitlang/async",
   "sennenki/console/ffi",
-  "moonbitlang/async/pipe",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/ref",
 }

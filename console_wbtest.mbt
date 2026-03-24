@@ -1,4 +1,5 @@
 ///|
+#cfg(not(platform="windows"))
 test "consolekey from ascii letters" {
   assert_eq(ConsoleKey::from_ascii(65), A)
   assert_eq(ConsoleKey::from_ascii(90), Z)
@@ -6,6 +7,7 @@ test "consolekey from ascii letters" {
 }
 
 ///|
+#cfg(not(platform="windows"))
 test "consolekey from ascii digits and specials" {
   assert_eq(ConsoleKey::from_ascii(48), D0)
   assert_eq(ConsoleKey::from_ascii(57), D9)
@@ -15,6 +17,7 @@ test "consolekey from ascii digits and specials" {
 }
 
 ///|
+#cfg(not(platform="windows"))
 test "consolekey from csi tilde number" {
   assert_eq(ConsoleKey::from_csi_tilde_number(1), Home)
   assert_eq(ConsoleKey::from_csi_tilde_number(2), Insert)
@@ -27,6 +30,7 @@ test "consolekey from csi tilde number" {
 }
 
 ///|
+#cfg(not(platform="windows"))
 test "decode csi modifiers" {
   assert_eq(decode_csi_modifier(50), (true, false, false))
   assert_eq(decode_csi_modifier(51), (false, true, false))
